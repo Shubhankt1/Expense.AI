@@ -74,12 +74,18 @@ export const processStatement = action({
         temperature: 0.1,
       });
 
+      console.log("Got a response");
+
       const content = response.choices[0].message.content;
       if (!content) {
         throw new Error("No response from AI");
       }
 
+      console.log("Got content:\n", content);
+
       const parsedData = JSON.parse(content);
+
+      console.log("Parsed data:", parsedData);
 
       // Store the processed statement
       const statementId = await ctx.runMutation(
