@@ -30,21 +30,32 @@ export function TransactionList({ transactions }: TransactionListProps) {
         >
           <div className="flex-1">
             <div className="flex items-center space-x-3">
-              <div className={`w-3 h-3 rounded-full ${
-                transaction.type === "income" ? "bg-emerald-500" : "bg-red-500"
-              }`} />
+              <div
+                className={`w-3 h-3 rounded-full ${
+                  transaction.type === "income"
+                    ? "bg-emerald-500"
+                    : "bg-red-500"
+                }`}
+              />
               <div>
-                <p className="font-medium text-slate-900">{transaction.description}</p>
+                <p className="font-medium text-slate-900">
+                  {transaction.description}
+                </p>
                 <p className="text-sm text-slate-500">{transaction.category}</p>
               </div>
             </div>
           </div>
-          
+
           <div className="text-right">
-            <p className={`font-semibold ${
-              transaction.type === "income" ? "text-emerald-600" : "text-red-600"
-            }`}>
-              {transaction.type === "income" ? "+" : "-"}${Math.abs(transaction.amount).toFixed(2)}
+            <p
+              className={`font-semibold ${
+                transaction.type === "income"
+                  ? "text-emerald-600"
+                  : "text-red-600"
+              }`}
+            >
+              {transaction.type === "income" ? "+" : "-"}$
+              {Math.abs(transaction.amount).toFixed(2)}
             </p>
             <p className="text-sm text-slate-500">
               {new Date(transaction.date).toLocaleDateString()}

@@ -17,19 +17,35 @@ export function SignInForm() {
           setSubmitting(true);
           const formData = new FormData(e.target as HTMLFormElement);
           formData.set("flow", flow);
-          void signIn("password", formData).catch((error) => {
-            let toastTitle = "";
-            if (error.message.includes("Invalid password")) {
-              toastTitle = "Invalid password. Please try again.";
-            } else {
-              toastTitle =
-                flow === "signIn"
-                  ? "Could not sign in, did you mean to sign up?"
-                  : "Could not sign up, did you mean to sign in?";
-            }
-            toast.error(toastTitle);
-            setSubmitting(false);
-          });
+
+          void signIn("password", formData)
+            .then(() => {
+              toast.success(
+                flow === "signIn" ? "Signed in!" : "Account created!"
+              );
+            })
+            .catch((error) => {
+              console.error("Auth error:", error);
+
+              let toastTitle = "";
+
+              if (error.message.includes("Invalid password")) {
+                toastTitle =
+                  "Password must be at least 8 characters with uppercase, lowercase, and number";
+              } else if (error.message.includes("already exists")) {
+                toastTitle = "Email already exists. Try signing in instead.";
+              } else if (error.message.includes("not found")) {
+                toastTitle = "Account not found. Try signing up instead.";
+              } else {
+                toastTitle =
+                  flow === "signIn"
+                    ? "Could not sign in, did you mean to sign up?"
+                    : "Could not sign up, did you mean to sign in?";
+              }
+
+              toast.error(toastTitle);
+              setSubmitting(false);
+            });
         }}
       >
         <input
@@ -43,11 +59,22 @@ export function SignInForm() {
           className="auth-input-field"
           type="password"
           name="password"
-          placeholder="Password"
+          placeholder="Password (min 8 chars, 1 upper, 1 lower, 1 number)"
           required
+          minLength={8}
         />
+        {flow === "signUp" && (
+          <p className="text-xs text-secondary">
+            Password must contain: 8+ characters, uppercase, lowercase, and
+            number
+          </p>
+        )}
         <button className="auth-button" type="submit" disabled={submitting}>
-          {flow === "signIn" ? "Sign in" : "Sign up"}
+          {submitting
+            ? "Loading..."
+            : flow === "signIn"
+              ? "Sign in"
+              : "Sign up"}
         </button>
         <div className="text-center text-sm text-secondary">
           <span>

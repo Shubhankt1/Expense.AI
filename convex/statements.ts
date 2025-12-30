@@ -3,6 +3,7 @@ import { action, mutation, query, internalMutation } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { internal } from "./_generated/api";
 import OpenAI from "openai";
+import { Id } from "./_generated/dataModel";
 
 const openai = new OpenAI({
   baseURL: process.env.CONVEX_OPENAI_BASE_URL,
@@ -41,7 +42,7 @@ export const processStatement = action({
     console.log("Statement text:", text);
 
     // Use AI to analyze the statement
-    const prompt = `Analyze this credit card or bank statement and extract transaction data. 
+    const prompt = `Analyze this credit card statement and extract transaction data based on expense (debit) or income/refund/return (credit).
     
     Statement content:
     ${text}
@@ -61,16 +62,19 @@ export const processStatement = action({
     
     Rules:
     - Positive amounts or credits should be "income"
-    - Negative amounts or debits should be "expense" 
+    - Negative amounts or debits should be "expense"
+	- For refund transactions, classify them as "income" and add "- Refund" at the end of the description.
     - Use absolute values for amounts
     - Categorize transactions appropriately
-    - Skip fees, interest charges, and payment transactions
-    - Only include actual purchases and deposits`;
+    - Skip payment transactions
+    - Only include actual purchases and deposits
+	- Your entire response must be a single JSON object.`;
 
     try {
       const response = await openai.chat.completions.create({
         model: "gpt-4o-mini",
         messages: [{ role: "user", content: prompt }],
+        response_format: { type: "json_object" },
         temperature: 0.1,
       });
 
@@ -81,35 +85,44 @@ export const processStatement = action({
         throw new Error("No response from AI");
       }
 
-      console.log("Got content:\n", content);
+      console.log({ content });
 
       const parsedData = JSON.parse(content);
 
-      console.log("Parsed data:", parsedData);
+      if (!parsedData.transactions || !Array.isArray(parsedData.transactions)) {
+        throw new Error("Invalid response format from AI");
+      }
+
+      console.log({ parsedData });
 
       // Store the processed statement
-      const statementId = await ctx.runMutation(
-        internal.statements.saveProcessedStatement,
-        {
-          userId,
-          fileName: args.fileName,
-          storageId: args.storageId,
-          transactionCount: parsedData.transactions.length,
-        }
-      );
+      await ctx.runMutation(internal.statements.saveProcessedStatement, {
+        userId,
+        fileName: args.fileName,
+        storageId: args.storageId,
+        transactionCount: parsedData.transactions.length,
+      });
+
+      await ctx.runMutation(internal.statements.addExtractedTransactionsBatch, {
+        userId,
+        transactions: parsedData.transactions.map((t: any) => ({
+          ...t,
+          source: "statement_upload",
+        })),
+      });
 
       // Add each transaction
-      for (const transaction of parsedData.transactions) {
-        await ctx.runMutation(internal.statements.addExtractedTransaction, {
-          userId,
-          amount: transaction.amount,
-          description: transaction.description,
-          category: transaction.category,
-          date: transaction.date,
-          type: transaction.type,
-          source: "statement_upload",
-        });
-      }
+      //   for (const transaction of parsedData.transactions) {
+      //     await ctx.runMutation(internal.statements.addExtractedTransaction, {
+      //       userId,
+      //       amount: transaction.amount,
+      //       description: transaction.description,
+      //       category: transaction.category,
+      //       date: transaction.date,
+      //       type: transaction.type,
+      //       source: "statement_upload",
+      //     });
+      //   }
 
       return {
         success: true,
@@ -138,48 +151,122 @@ export const saveProcessedStatement = internalMutation({
   },
 });
 
-export const addExtractedTransaction = internalMutation({
+export const addExtractedTransactionsBatch = internalMutation({
   args: {
     userId: v.id("users"),
-    amount: v.number(),
-    description: v.string(),
-    category: v.string(),
-    date: v.string(),
-    type: v.union(v.literal("income"), v.literal("expense")),
-    source: v.string(),
+    transactions: v.array(
+      v.object({
+        amount: v.number(),
+        description: v.string(),
+        category: v.string(),
+        date: v.string(),
+        type: v.union(v.literal("income"), v.literal("expense")),
+        source: v.string(),
+      })
+    ),
   },
   handler: async (ctx, args) => {
-    const transactionId = await ctx.db.insert("transactions", {
-      userId: args.userId,
-      amount: args.amount,
-      description: args.description,
-      category: args.category,
-      date: args.date,
-      type: args.type,
-      isRecurring: false,
-    });
+    const budgetUpdates = new Map<Id<"budgets">, number>();
+    let amtChange = 0;
 
-    // Update budget spending if it's an expense
-    if (args.type === "expense") {
-      const month = args.date.substring(0, 7);
+    for (const transaction of args.transactions) {
+      // 1. Insert the transaction
+      await ctx.db.insert("transactions", {
+        userId: args.userId,
+        amount: transaction.amount,
+        description: transaction.description,
+        category: transaction.category,
+        date: transaction.date,
+        type: transaction.type,
+        isRecurring: false,
+      });
+
+      // 2. Update budget spending if it's an expense
+      //   if (transaction.type === "expense") {
+      const month = transaction.date.substring(0, 7);
       const existingBudget = await ctx.db
         .query("budgets")
         .withIndex("by_user_and_month", (q) =>
           q.eq("userId", args.userId).eq("month", month)
         )
-        .filter((q) => q.eq(q.field("category"), args.category))
+        .filter((q) => q.eq(q.field("category"), transaction.category))
         .first();
 
       if (existingBudget) {
+        const budgetKey = existingBudget._id;
+
+        if (transaction.type === "income")
+          amtChange = -Math.abs(transaction.amount);
+        else if (transaction.type === "expense")
+          amtChange = Math.abs(transaction.amount);
+
+        if (amtChange !== 0) {
+          const currBudget = budgetUpdates.get(budgetKey) || 0;
+          budgetUpdates.set(budgetKey, currBudget + amtChange);
+        }
         await ctx.db.patch(existingBudget._id, {
-          spent: existingBudget.spent + Math.abs(args.amount),
+          spent: existingBudget.spent + Math.abs(transaction.amount),
         });
       }
+      //   }
     }
-
-    return transactionId;
+    for (const [budgetId, change] of budgetUpdates.entries()) {
+      const budget = await ctx.db.get(budgetId);
+      if (budget) {
+        const newSpent = Math.max(0, budget.spent + change); // Never go below 0
+        await ctx.db.patch(budgetId, {
+          spent: newSpent,
+        });
+        console.log(
+          `Updated budget ${budget.category}: ${budget.spent} -> ${newSpent}`
+        );
+      }
+    }
   },
 });
+
+// export const addExtractedTransaction = internalMutation({
+//   args: {
+//     userId: v.id("users"),
+//     amount: v.number(),
+//     description: v.string(),
+//     category: v.string(),
+//     date: v.string(),
+//     type: v.union(v.literal("income"), v.literal("expense")),
+//     source: v.string(),
+//   },
+//   handler: async (ctx, args) => {
+//     const transactionId = await ctx.db.insert("transactions", {
+//       userId: args.userId,
+//       amount: args.amount,
+//       description: args.description,
+//       category: args.category,
+//       date: args.date,
+//       type: args.type,
+//       isRecurring: false,
+//     });
+
+//     // Update budget spending if it's an expense
+//     if (args.type === "expense") {
+//       const month = args.date.substring(0, 7);
+//       const existingBudget = await ctx.db
+//         .query("budgets")
+//         .withIndex("by_user_and_month", (q) =>
+//           q.eq("userId", args.userId).eq("month", month)
+//         )
+//         .filter((q) => q.eq(q.field("category"), args.category))
+//         .first();
+
+//       if (existingBudget) {
+//         await ctx.db.patch(existingBudget._id, {
+//           spent: existingBudget.spent + Math.abs(args.amount),
+//         });
+//       }
+//     }
+
+//     return transactionId;
+//   },
+// });
 
 export const getProcessedStatements = query({
   handler: async (ctx) => {

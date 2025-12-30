@@ -1,5 +1,11 @@
 import { v } from "convex/values";
-import { query, action, internalMutation, mutation, internalQuery } from "./_generated/server";
+import {
+  query,
+  action,
+  internalMutation,
+  mutation,
+  internalQuery,
+} from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { internal } from "./_generated/api";
 import OpenAI from "openai";
@@ -29,7 +35,7 @@ export const getUserBudgets = internalQuery({
     const currentMonth = new Date().toISOString().substring(0, 7);
     return await ctx.db
       .query("budgets")
-      .withIndex("by_user_and_month", (q) => 
+      .withIndex("by_user_and_month", (q) =>
         q.eq("userId", args.userId).eq("month", currentMonth)
       )
       .collect();
@@ -42,9 +48,12 @@ export const generateInsights = action({
   },
   handler: async (ctx, args) => {
     // Get user's financial data
-    const transactions = await ctx.runQuery(internal.insights.getUserTransactions, {
-      userId: args.userId,
-    });
+    const transactions = await ctx.runQuery(
+      internal.insights.getUserTransactions,
+      {
+        userId: args.userId,
+      }
+    );
 
     const budgets = await ctx.runQuery(internal.insights.getUserBudgets, {
       userId: args.userId,
@@ -69,7 +78,9 @@ export const generateInsights = action({
       })),
     };
 
-    const prompt = `Analyze this financial data and provide 2-3 personalized insights:
+    console.log({ financialSummary });
+
+    const prompt = `Analyze this financial data and provide 5 personalized insights:
     
     Financial Summary:
     - Total transactions: ${financialSummary.totalTransactions}
@@ -91,18 +102,21 @@ export const generateInsights = action({
     
     Focus on actionable advice, spending patterns, and budget optimization.`;
 
+    console.log({ prompt });
+
     try {
       const response = await openai.chat.completions.create({
         model: "gpt-4.1-nano",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.7,
+        response_format: { type: "json_object" },
       });
 
       const content = response.choices[0].message.content;
       if (!content) return;
 
       const aiInsights = JSON.parse(content);
-      
+
       // Store insights in database
       for (const insight of aiInsights.insights) {
         await ctx.runMutation(internal.insights.createInsight, {
@@ -139,7 +153,7 @@ export const getUserBudgetsPublic = query({
     const currentMonth = new Date().toISOString().substring(0, 7);
     return await ctx.db
       .query("budgets")
-      .withIndex("by_user_and_month", (q) => 
+      .withIndex("by_user_and_month", (q) =>
         q.eq("userId", args.userId).eq("month", currentMonth)
       )
       .collect();
