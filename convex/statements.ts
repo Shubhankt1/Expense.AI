@@ -2,13 +2,14 @@ import { v } from "convex/values";
 import { action, mutation, query, internalMutation } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { internal } from "./_generated/api";
-import OpenAI from "openai";
+// import OpenAI from "openai";
 import { Id } from "./_generated/dataModel";
+import { GoogleGenAI, ThinkingLevel } from "@google/genai";
 
-const openai = new OpenAI({
-  baseURL: process.env.CONVEX_OPENAI_BASE_URL,
-  apiKey: process.env.CONVEX_OPENAI_API_KEY,
-});
+// const openai = new OpenAI({
+//   baseURL: process.env.CONVEX_OPENAI_BASE_URL,
+//   apiKey: process.env.CONVEX_OPENAI_API_KEY,
+// });
 
 export const generateUploadUrl = mutation({
   handler: async (ctx) => {
@@ -66,21 +67,35 @@ export const processStatement = action({
 	- For refund transactions, classify them as "income" and add "- Refund" at the end of the description.
     - Use absolute values for amounts
     - Categorize transactions appropriately
-    - Skip payment transactions
+    - SKIP statement/Bill payment transactions
     - Only include actual purchases and deposits
 	- Your entire response must be a single JSON object.`;
 
     try {
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: [{ role: "user", content: prompt }],
-        response_format: { type: "json_object" },
-        temperature: 0.1,
+      //   const response = await openai.chat.completions.create({
+      //     model: "gpt-4o-mini",
+      //     messages: [{ role: "user", content: prompt }],
+      //     response_format: { type: "json_object" },
+      //     temperature: 0.1,
+      //   });
+
+      const gemini = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
+      const resp = await gemini.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: prompt,
+        config: {
+          responseMimeType: "application/json",
+          thinkingConfig: {
+            thinkingLevel: ThinkingLevel.MINIMAL,
+          },
+        },
       });
 
       console.log("Got a response");
 
-      const content = response.choices[0].message.content;
+      //   const content = response.choices[0].message.content;
+      const content = resp.text;
       if (!content) {
         throw new Error("No response from AI");
       }
@@ -130,9 +145,7 @@ export const processStatement = action({
       };
     } catch (error) {
       console.error("Failed to process statement:", error);
-      throw new Error(
-        "Failed to analyze statement. Please check the file format."
-      );
+      throw error;
     }
   },
 });

@@ -5,16 +5,16 @@
   "type": "module",
   "scripts": {
     "dev": "npm-run-all --parallel dev:frontend dev:backend",
-    "dev:frontend": "vite --open",
+    "dev:frontend": "vite --open --host",
     "dev:backend": "convex dev",
     "build": "vite build",
     "lint": "tsc -p convex -noEmit --pretty false && tsc -p . -noEmit --pretty false && convex dev --once && vite build"
   },
   "dependencies": {
     "@convex-dev/auth": "^0.0.80",
+    "@google/genai": "^1.34.0",
     "clsx": "^2.1.1",
     "convex": "^1.24.2",
-    "openai": "^6.3.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "sonner": "^2.0.3",

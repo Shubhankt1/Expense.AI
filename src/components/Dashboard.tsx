@@ -18,6 +18,7 @@ export function Dashboard() {
   });
   const spendingByCategory = useQuery(api.transactions.getSpendingByCategory, {
     month: currentMonth,
+    // month: "2025-11",
   });
   const monthlyTrends = useQuery(api.transactions.getMonthlyTrends, {
     months: 6,
