@@ -10,7 +10,9 @@ export function BudgetManager() {
   });
 
   const currentMonth = new Date().toISOString().substring(0, 7);
-  const budgetStatus = useQuery(api.budgets.getBudgetStatus, { month: currentMonth });
+  const budgetStatus = useQuery(api.budgets.getBudgetStatus, {
+    month: currentMonth,
+  });
   const setBudget = useMutation(api.budgets.setBudget);
 
   const categories = [
@@ -27,7 +29,7 @@ export function BudgetManager() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!newBudget.category || !newBudget.monthlyLimit) {
       toast.error("Please fill in all fields");
       return;
@@ -60,36 +62,56 @@ export function BudgetManager() {
       {/* Budget Overview */}
       <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
         <h2 className="text-xl font-semibold text-slate-900 mb-4">
-          Budget Overview - {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+          Budget Overview -{" "}
+          {new Date().toLocaleDateString("en-US", {
+            month: "long",
+            year: "numeric",
+          })}
         </h2>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <div className="text-center p-4 bg-slate-50 rounded-lg">
             <p className="text-sm text-slate-600">Total Budget</p>
-            <p className="text-2xl font-bold text-slate-900">${budgetStatus.totalBudget.toFixed(2)}</p>
+            <p className="text-2xl font-bold text-slate-900">
+              ${budgetStatus.totalBudget.toFixed(2)}
+            </p>
           </div>
           <div className="text-center p-4 bg-slate-50 rounded-lg">
             <p className="text-sm text-slate-600">Total Spent</p>
-            <p className="text-2xl font-bold text-red-600">${budgetStatus.totalSpent.toFixed(2)}</p>
+            <p className="text-2xl font-bold text-red-600">
+              ${budgetStatus.totalSpent.toFixed(2)}
+            </p>
           </div>
           <div className="text-center p-4 bg-slate-50 rounded-lg">
             <p className="text-sm text-slate-600">Remaining</p>
-            <p className="text-2xl font-bold text-emerald-600">${(budgetStatus?.totalRemaining ?? 0).toFixed(2)}</p>
+            <p className="text-2xl font-bold text-emerald-600">
+              ${(budgetStatus?.totalRemaining ?? 0).toFixed(2)}
+            </p>
           </div>
         </div>
 
         {/* Progress Bar */}
         <div className="mb-6">
           <div className="flex justify-between items-center mb-2">
-            <span className="text-sm font-medium text-slate-700">Overall Progress</span>
+            <span className="text-sm font-medium text-slate-700">
+              Overall Progress
+            </span>
             <span className="text-sm text-slate-600">
-              {budgetStatus.totalBudget > 0 ? ((budgetStatus.totalSpent / budgetStatus.totalBudget) * 100).toFixed(1) : 0}%
+              {budgetStatus.totalBudget > 0
+                ? (
+                    (budgetStatus.totalSpent / budgetStatus.totalBudget) *
+                    100
+                  ).toFixed(1)
+                : 0}
+              %
             </span>
           </div>
           <div className="w-full bg-slate-200 rounded-full h-3">
             <div
               className={`h-3 rounded-full ${
-                budgetStatus.totalSpent > budgetStatus.totalBudget ? "bg-red-500" : "bg-emerald-500"
+                budgetStatus.totalSpent > budgetStatus.totalBudget
+                  ? "bg-red-500"
+                  : "bg-emerald-500"
               }`}
               style={{
                 width: `${Math.min((budgetStatus.totalSpent / budgetStatus.totalBudget) * 100, 100)}%`,
@@ -101,8 +123,10 @@ export function BudgetManager() {
 
       {/* Category Budgets */}
       <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
-        <h3 className="text-lg font-semibold text-slate-900 mb-4">Category Budgets</h3>
-        
+        <h3 className="text-lg font-semibold text-slate-900 mb-4">
+          Category Budgets
+        </h3>
+
         {budgetStatus.categories.length === 0 ? (
           <p className="text-slate-500 text-center py-8">
             No budgets set yet. Create your first budget below!
@@ -110,31 +134,44 @@ export function BudgetManager() {
         ) : (
           <div className="space-y-4">
             {budgetStatus.categories.map((budget) => (
-              <div key={budget.category} className="border border-slate-200 rounded-lg p-4">
+              <div
+                key={budget.category}
+                className="border border-slate-200 rounded-lg p-4"
+              >
                 <div className="flex justify-between items-center mb-2">
-                  <h4 className="font-medium text-slate-900">{budget.category}</h4>
+                  <h4 className="font-medium text-slate-900">
+                    {budget.category}
+                  </h4>
                   <span className="text-sm text-slate-600">
                     ${budget.spent.toFixed(2)} / ${budget.limit.toFixed(2)}
                   </span>
                 </div>
-                
+
                 <div className="w-full bg-slate-200 rounded-full h-2 mb-2">
                   <div
                     className={`h-2 rounded-full ${
-                      budget.percentage > 100 ? "bg-red-500" : 
-                      budget.percentage > 80 ? "bg-yellow-500" : "bg-emerald-500"
+                      budget.percentage > 100
+                        ? "bg-red-500"
+                        : budget.percentage > 80
+                          ? "bg-yellow-500"
+                          : "bg-emerald-500"
                     }`}
                     style={{ width: `${Math.min(budget.percentage, 100)}%` }}
                   />
                 </div>
-                
+
                 <div className="flex justify-between items-center text-sm">
-                  <span className={`${
-                    budget.remaining < 0 ? "text-red-600" : "text-emerald-600"
-                  }`}>
-                    {budget.remaining < 0 ? "Over budget by" : "Remaining:"} ${Math.abs(budget.remaining).toFixed(2)}
+                  <span
+                    className={`${
+                      budget.remaining < 0 ? "text-red-600" : "text-emerald-600"
+                    }`}
+                  >
+                    {budget.remaining < 0 ? "Over budget by" : "Remaining:"} $
+                    {Math.abs(budget.remaining).toFixed(2)}
                   </span>
-                  <span className="text-slate-500">{budget.percentage.toFixed(1)}%</span>
+                  <span className="text-slate-500">
+                    {budget.percentage.toFixed(1)}%
+                  </span>
                 </div>
               </div>
             ))}
@@ -144,8 +181,10 @@ export function BudgetManager() {
 
       {/* Add/Edit Budget */}
       <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
-        <h3 className="text-lg font-semibold text-slate-900 mb-4">Set Budget</h3>
-        
+        <h3 className="text-lg font-semibold text-slate-900 mb-4">
+          Set Budget
+        </h3>
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -154,7 +193,9 @@ export function BudgetManager() {
               </label>
               <select
                 value={newBudget.category}
-                onChange={(e) => setNewBudget({ ...newBudget, category: e.target.value })}
+                onChange={(e) =>
+                  setNewBudget({ ...newBudget, category: e.target.value })
+                }
                 className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                 required
               >
@@ -175,7 +216,9 @@ export function BudgetManager() {
                 type="number"
                 step="0.01"
                 value={newBudget.monthlyLimit}
-                onChange={(e) => setNewBudget({ ...newBudget, monthlyLimit: e.target.value })}
+                onChange={(e) =>
+                  setNewBudget({ ...newBudget, monthlyLimit: e.target.value })
+                }
                 className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                 placeholder="0.00"
                 required

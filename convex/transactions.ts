@@ -27,7 +27,7 @@ export const addTransaction = mutation({
       const month = args.date.substring(0, 7); // Extract YYYY-MM
       const existingBudget = await ctx.db
         .query("budgets")
-        .withIndex("by_user_and_month", (q) => 
+        .withIndex("by_user_and_month", (q) =>
           q.eq("userId", userId).eq("month", month)
         )
         .filter((q) => q.eq(q.field("category"), args.category))
@@ -98,10 +98,11 @@ export const getSpendingByCategory = query({
       : transactions;
 
     const categoryTotals: Record<string, number> = {};
-    
+
     filteredTransactions.forEach((transaction) => {
       const category = transaction.category;
-      categoryTotals[category] = (categoryTotals[category] || 0) + Math.abs(transaction.amount);
+      categoryTotals[category] =
+        (categoryTotals[category] || 0) + Math.abs(transaction.amount);
     });
 
     return Object.entries(categoryTotals).map(([category, amount]) => ({
@@ -126,7 +127,8 @@ export const getMonthlyTrends = query({
       .withIndex("by_user", (q) => q.eq("userId", userId))
       .collect();
 
-    const monthlyData: Record<string, { income: number; expenses: number }> = {};
+    const monthlyData: Record<string, { income: number; expenses: number }> =
+      {};
 
     transactions.forEach((transaction) => {
       const month = transaction.date.substring(0, 7);
@@ -142,7 +144,7 @@ export const getMonthlyTrends = query({
     });
 
     const sortedMonths = Object.keys(monthlyData).sort();
-    const recentMonths = args.months 
+    const recentMonths = args.months
       ? sortedMonths.slice(-args.months)
       : sortedMonths;
 

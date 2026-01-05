@@ -1,7 +1,7 @@
 import { Authenticated, Unauthenticated, useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
-import { SignInForm } from "./SignInForm";
-import { SignOutButton } from "./SignOutButton";
+import { SignInForm } from "./components/SignInForm";
+import { SignOutButton } from "./components/SignOutButton";
 import { Toaster } from "sonner";
 import { Dashboard } from "./components/Dashboard";
 
@@ -42,7 +42,7 @@ function AppContent() {
           </div>
           <div className="flex items-center space-x-4">
             <span className="text-sm text-slate-600">
-              {loggedInUser?.email}
+              `{loggedInUser?.email} | {loggedInUser?._id}`
             </span>
             <SignOutButton />
           </div>
@@ -66,7 +66,7 @@ function LandingPage() {
           </div>
         </div>
       </header>
-      
+
       <main className="flex-1 flex items-center justify-center px-6">
         <div className="max-w-md w-full">
           <div className="text-center mb-8">
@@ -74,7 +74,8 @@ function LandingPage() {
               Smart Financial Management
             </h2>
             <p className="text-lg text-slate-600 mb-6">
-              Track expenses, set budgets, and get AI-powered insights to achieve your financial goals.
+              Track expenses, set budgets, and get AI-powered insights to
+              achieve your financial goals.
             </p>
             <div className="grid grid-cols-1 gap-4 text-sm text-slate-600 mb-8">
               <div className="flex items-center space-x-2">

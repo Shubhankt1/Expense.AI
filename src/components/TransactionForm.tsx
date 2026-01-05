@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { toast } from "sonner";
+import { dateInputToISO } from "@/lib/dateUtils";
 
 export function TransactionForm() {
   const [isOpen, setIsOpen] = useState(false);
@@ -29,7 +30,7 @@ export function TransactionForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.amount || !formData.description || !formData.category) {
       toast.error("Please fill in all required fields");
       return;
@@ -40,7 +41,7 @@ export function TransactionForm() {
         amount: parseFloat(formData.amount),
         description: formData.description,
         category: formData.category,
-        date: formData.date,
+        date: dateInputToISO(formData.date),
         type: formData.type,
       });
 
@@ -55,6 +56,7 @@ export function TransactionForm() {
       setIsOpen(false);
     } catch (error) {
       toast.error("Failed to add transaction");
+      throw error;
     }
   };
 
@@ -74,7 +76,9 @@ export function TransactionForm() {
   return (
     <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold text-slate-900">Add Transaction</h3>
+        <h3 className="text-lg font-semibold text-slate-900">
+          Add Transaction
+        </h3>
         <button
           onClick={() => setIsOpen(false)}
           className="text-slate-400 hover:text-slate-600"
@@ -91,7 +95,12 @@ export function TransactionForm() {
             </label>
             <select
               value={formData.type}
-              onChange={(e) => setFormData({ ...formData, type: e.target.value as "income" | "expense" })}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  type: e.target.value as "income" | "expense",
+                })
+              }
               className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
             >
               <option value="expense">Expense</option>
@@ -107,7 +116,9 @@ export function TransactionForm() {
               type="number"
               step="0.01"
               value={formData.amount}
-              onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, amount: e.target.value })
+              }
               className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
               placeholder="0.00"
               required
@@ -122,7 +133,9 @@ export function TransactionForm() {
           <input
             type="text"
             value={formData.description}
-            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, description: e.target.value })
+            }
             className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
             placeholder="What was this for?"
             required
@@ -136,7 +149,9 @@ export function TransactionForm() {
             </label>
             <select
               value={formData.category}
-              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, category: e.target.value })
+              }
               className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
               required
             >
@@ -156,7 +171,9 @@ export function TransactionForm() {
             <input
               type="date"
               value={formData.date}
-              onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, date: e.target.value })
+              }
               className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
               required
             />

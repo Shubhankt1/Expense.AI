@@ -1,15 +1,14 @@
 import { v } from "convex/values";
-import { action, mutation, query, internalMutation } from "./_generated/server";
+import {
+  action,
+  mutation,
+  query,
+  internalMutation,
+  internalAction,
+} from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { internal } from "./_generated/api";
-// import OpenAI from "openai";
 import { Id } from "./_generated/dataModel";
-import { GoogleGenAI, ThinkingLevel } from "@google/genai";
-
-// const openai = new OpenAI({
-//   baseURL: process.env.CONVEX_OPENAI_BASE_URL,
-//   apiKey: process.env.CONVEX_OPENAI_API_KEY,
-// });
 
 export const generateUploadUrl = mutation({
   handler: async (ctx) => {
@@ -21,7 +20,7 @@ export const generateUploadUrl = mutation({
   },
 });
 
-export const processStatement = action({
+export const processStatementMutation = mutation({
   args: {
     storageId: v.id("_storage"),
     fileName: v.string(),
@@ -32,6 +31,27 @@ export const processStatement = action({
       throw new Error("Not authenticated");
     }
 
+    const jobId: Id<"_scheduled_functions"> = await ctx.scheduler.runAfter(
+      0,
+      internal.statements.processStatement,
+      {
+        ...args,
+        userId,
+      }
+    );
+    return jobId;
+  },
+});
+
+export const processStatement = internalAction({
+  args: {
+    storageId: v.id("_storage"),
+    fileName: v.string(),
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const { userId } = args;
+
     // Get the file from storage
     const file = await ctx.storage.get(args.storageId);
     if (!file) {
@@ -40,7 +60,7 @@ export const processStatement = action({
 
     // Convert file to text (assuming it's a text-based format like CSV or plain text)
     const text = await file.text();
-    console.log("Statement text:", text);
+    // console.log("Statement text:", text);
 
     // Use AI to analyze the statement
     const prompt = `Analyze this credit card statement and extract transaction data based on expense (debit) or income/refund/return (credit).
@@ -79,30 +99,35 @@ export const processStatement = action({
       //     temperature: 0.1,
       //   });
 
-      const gemini = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      //   const gemini = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-      const resp = await gemini.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: prompt,
-        config: {
-          responseMimeType: "application/json",
-          thinkingConfig: {
-            thinkingLevel: ThinkingLevel.MINIMAL,
-          },
-        },
+      //   const resp = await gemini.models.generateContent({
+      //     model: "gemini-3-flash-preview",
+      //     contents: prompt,
+      //     config: {
+      //       responseMimeType: "application/json",
+      //       thinkingConfig: {
+      //         thinkingLevel: ThinkingLevel.MINIMAL,
+      //       },
+      //     },
+      //   });
+
+      //   console.log("Got a response");
+
+      //   //   const content = response.choices[0].message.content;
+      //   const content = resp.text;
+      //   if (!content) {
+      //     throw new Error("No response from AI");
+      //   }
+
+      //   console.log({ content });
+
+      //   const parsedData = JSON.parse(content);
+
+      const parsedData: any = await ctx.runAction(internal.gemini.callGemini, {
+        prompt,
+        json: true,
       });
-
-      console.log("Got a response");
-
-      //   const content = response.choices[0].message.content;
-      const content = resp.text;
-      if (!content) {
-        throw new Error("No response from AI");
-      }
-
-      console.log({ content });
-
-      const parsedData = JSON.parse(content);
 
       if (!parsedData.transactions || !Array.isArray(parsedData.transactions)) {
         throw new Error("Invalid response format from AI");
@@ -110,7 +135,7 @@ export const processStatement = action({
 
       console.log({ parsedData });
 
-      // Store the processed statement
+      // Store the processed statement info in DB
       await ctx.runMutation(internal.statements.saveProcessedStatement, {
         userId,
         fileName: args.fileName,
@@ -118,6 +143,7 @@ export const processStatement = action({
         transactionCount: parsedData.transactions.length,
       });
 
+      // Write transactions to DB in batch
       await ctx.runMutation(internal.statements.addExtractedTransactionsBatch, {
         userId,
         transactions: parsedData.transactions.map((t: any) => ({
@@ -125,19 +151,6 @@ export const processStatement = action({
           source: "statement_upload",
         })),
       });
-
-      // Add each transaction
-      //   for (const transaction of parsedData.transactions) {
-      //     await ctx.runMutation(internal.statements.addExtractedTransaction, {
-      //       userId,
-      //       amount: transaction.amount,
-      //       description: transaction.description,
-      //       category: transaction.category,
-      //       date: transaction.date,
-      //       type: transaction.type,
-      //       source: "statement_upload",
-      //     });
-      //   }
 
       return {
         success: true,
@@ -189,7 +202,7 @@ export const addExtractedTransactionsBatch = internalMutation({
         amount: transaction.amount,
         description: transaction.description,
         category: transaction.category,
-        date: transaction.date,
+        date: transaction.date + "T00:00:00.000Z",
         type: transaction.type,
         isRecurring: false,
       });
