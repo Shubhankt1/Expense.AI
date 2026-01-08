@@ -133,7 +133,7 @@ export const processStatement = internalAction({
         throw new Error("Invalid response format from AI");
       }
 
-      console.log({ parsedData });
+      //   console.log({ parsedData });
 
       // Store the processed statement info in DB
       await ctx.runMutation(internal.statements.saveProcessedStatement, {
