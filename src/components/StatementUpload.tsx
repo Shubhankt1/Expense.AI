@@ -106,7 +106,6 @@ export function StatementUpload() {
     } catch (error) {
       console.error("Upload error:", error);
       toast.error("Failed to process statement. Please try again.");
-    } finally {
     }
   };
 

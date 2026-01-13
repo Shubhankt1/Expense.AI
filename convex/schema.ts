@@ -22,6 +22,7 @@ const applicationTables = {
     monthlyLimit: v.number(),
     month: v.string(), // Format: "2024-01"
     spent: v.number(),
+    updatedAt: v.optional(v.string()),
   })
     .index("by_user", ["userId"])
     .index("by_user_and_month", ["userId", "month"]),

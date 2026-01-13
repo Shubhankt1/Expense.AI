@@ -41,7 +41,7 @@ function AppContent() {
             <h1 className="text-xl font-semibold text-slate-900">FinanceAI</h1>
           </div>
           <div className="flex items-center space-x-4">
-            <span className="text-sm text-slate-600">
+            <span className="text-sm text-slate-600 max-w-[150px] md:max-w-none truncate">
               `{loggedInUser?.email} | {loggedInUser?._id}`
             </span>
             <SignOutButton />

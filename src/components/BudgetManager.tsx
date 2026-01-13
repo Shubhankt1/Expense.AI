@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { toast } from "sonner";
+import { DeleteButton } from "./DeleteButton";
 
 export function BudgetManager() {
   const [newBudget, setNewBudget] = useState({
@@ -36,16 +37,18 @@ export function BudgetManager() {
     }
 
     try {
-      await setBudget({
+      const resp = await setBudget({
         category: newBudget.category,
         monthlyLimit: parseFloat(newBudget.monthlyLimit),
         month: currentMonth,
       });
-
-      toast.success("Budget updated successfully");
+      if (resp.operation === "delete")
+        toast.success("Budget deleted successfully");
+      else toast.success("Budget updated successfully");
       setNewBudget({ category: "", monthlyLimit: "" });
     } catch (error) {
       toast.error("Failed to update budget");
+      throw error;
     }
   };
 
@@ -136,15 +139,33 @@ export function BudgetManager() {
             {budgetStatus.categories.map((budget) => (
               <div
                 key={budget.category}
-                className="border border-slate-200 rounded-lg p-4"
+                className="group border border-slate-200 rounded-lg p-4"
               >
                 <div className="flex justify-between items-center mb-2">
                   <h4 className="font-medium text-slate-900">
                     {budget.category}
                   </h4>
-                  <span className="text-sm text-slate-600">
-                    ${budget.spent.toFixed(2)} / ${budget.limit.toFixed(2)}
-                  </span>
+                  <div className="flex items-center">
+                    <span className="text-sm text-slate-600">
+                      ${budget.spent.toFixed(2)} / ${budget.limit.toFixed(2)}
+                    </span>
+                    <div className="w-5 md:w-0 md:group-hover:w-4 overflow-visible">
+                      <DeleteButton
+                        onDelete={() => {}}
+                        isDeleting={false}
+                        itemName="budget"
+                        size="md"
+                        className="md:translate-x-2 md:group-hover:translate-x-0 transition-all duration-200 ease-out"
+                      />
+                    </div>
+                    {/* <DeleteButton
+                      onDelete={() => {
+                        console.log("deleted");
+                      }}
+                      isDeleting={false}
+                      itemName="Budget"
+                    /> */}
+                  </div>
                 </div>
 
                 <div className="w-full bg-slate-200 rounded-full h-2 mb-2">

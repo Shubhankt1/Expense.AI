@@ -1,3 +1,11 @@
+import { dateToMonthLocaleString, formatDate } from "@/lib/dateUtils";
+import { useMutation } from "convex/react";
+import { api } from "../../convex/_generated/api";
+import { useState } from "react";
+import { toast } from "sonner";
+import { Id } from "../../convex/_generated/dataModel";
+import { DeleteButton } from "./DeleteButton";
+
 interface Transaction {
   _id: string;
   amount: number;
@@ -13,6 +21,36 @@ interface TransactionListProps {
 }
 
 export function TransactionList({ transactions }: TransactionListProps) {
+  const deleteTransaction = useMutation(api.transactions.deleteTransactionTask);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const handleDelete = async (transac: Transaction) => {
+    if (
+      !confirm(
+        `Delete transaction?\n${transac.description}: $${transac.amount}.\n\n` +
+          `Deleting will recalculate your budget:\n${transac.category}:${dateToMonthLocaleString(transac.date)}`
+      )
+    )
+      return;
+    setDeletingId(transac._id);
+    toast.promise(
+      deleteTransaction({ id: transac._id as Id<"transactions"> }).finally(() =>
+        setDeletingId(null)
+      ),
+      {
+        success: `Deleted ${transac.description.substring(0, 10)}... of $${transac.amount.toFixed(2)}`,
+        error: (error) => {
+          const message = error?.message || "";
+          const match = message.match(/Uncaught Error: (.+?)(?:\n|at handler)/);
+          const cleanError = match
+            ? match[1].trim()
+            : "Failed to delete transaction";
+          return cleanError;
+        },
+      }
+    );
+  };
+
   if (transactions.length === 0) {
     return (
       <div className="text-center py-8 text-slate-500">
@@ -26,7 +64,7 @@ export function TransactionList({ transactions }: TransactionListProps) {
       {transactions.map((transaction) => (
         <div
           key={transaction._id}
-          className="flex items-center justify-between p-4 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors"
+          className="group flex items-center justify-between p-4 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors"
         >
           <div className="flex-1">
             <div className="flex items-center space-x-3">
@@ -58,9 +96,15 @@ export function TransactionList({ transactions }: TransactionListProps) {
               {Math.abs(transaction.amount).toFixed(2)}
             </p>
             <p className="text-sm text-slate-500">
-              {new Date(transaction.date).toLocaleDateString()}
+              {formatDate(transaction.date)}
             </p>
           </div>
+          <DeleteButton
+            onDelete={() => handleDelete(transaction)}
+            isDeleting={deletingId === transaction._id}
+            className="ml-4"
+            itemName="transaction"
+          />
         </div>
       ))}
     </div>

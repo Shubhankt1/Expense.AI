@@ -1,6 +1,7 @@
 import { v } from "convex/values";
-import { query, mutation } from "./_generated/server";
+import { query, mutation, internalMutation } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import { internal } from "./_generated/api";
 
 export const addTransaction = mutation({
   args: {
@@ -20,24 +21,27 @@ export const addTransaction = mutation({
     const transactionId = await ctx.db.insert("transactions", {
       userId,
       ...args,
+      date: args.date + "T00:00:00.000Z",
     });
 
     // Update budget spending if it's an expense
-    if (args.type === "expense") {
-      const month = args.date.substring(0, 7); // Extract YYYY-MM
-      const existingBudget = await ctx.db
-        .query("budgets")
-        .withIndex("by_user_and_month", (q) =>
-          q.eq("userId", userId).eq("month", month)
-        )
-        .filter((q) => q.eq(q.field("category"), args.category))
-        .first();
+    const month = args.date.substring(0, 7); // Extract YYYY-MM
+    const existingBudget = await ctx.db
+      .query("budgets")
+      .withIndex("by_user_and_month", (q) =>
+        q.eq("userId", userId).eq("month", month)
+      )
+      .filter((q) => q.eq(q.field("category"), args.category))
+      .first();
 
-      if (existingBudget) {
-        await ctx.db.patch(existingBudget._id, {
-          spent: existingBudget.spent + Math.abs(args.amount),
-        });
-      }
+    if (existingBudget) {
+      await ctx.db.patch(existingBudget._id, {
+        spent:
+          args.type === "expense"
+            ? existingBudget.spent + Math.abs(args.amount)
+            : existingBudget.spent - Math.abs(args.amount),
+        updatedAt: new Date().toISOString().split("T")[0] + "T00:00:00.000Z",
+      });
     }
 
     return transactionId;
@@ -74,6 +78,48 @@ export const getTransactions = query({
     }
 
     return await query.collect();
+  },
+});
+
+export const deleteTransactionTask = mutation({
+  args: { id: v.id("transactions") },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("UnAuthenticated!");
+    }
+    const transaction = await ctx.db.get(args.id);
+    if (transaction?.userId !== userId) throw new Error("UnAuthorised!");
+
+    const deletedRes: any = await ctx.runMutation(
+      internal.transactions.deleteTransaction,
+      {
+        id: args.id,
+      }
+    );
+    console.log({ deletedRes });
+
+    const patchResp = await ctx.runMutation(
+      internal.budgets.updateBudgetForTransaction,
+      {
+        userId: transaction.userId,
+        category: transaction.category,
+        month: transaction.date.substring(0, 7),
+        amount: transaction.amount,
+        transactionType: transaction.type,
+      }
+    );
+    console.log({ patchResp });
+  },
+});
+
+export const deleteTransaction = internalMutation({
+  args: { id: v.id("transactions") },
+  handler: async (ctx, args) => {
+    const transaction = await ctx.db.get("transactions", args.id);
+    if (!transaction) throw new Error("Transaction not found");
+    await ctx.db.delete(args.id);
+    return { deleted: true, status: 204 };
   },
 });
 
