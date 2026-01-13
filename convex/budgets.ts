@@ -146,7 +146,6 @@ export const getBudgetStatus = query({
   },
 });
 
-// TODO: income transactions are not -ve, handle those.
 export const updateBudgetForTransaction = internalMutation({
   args: {
     userId: v.id("users"),
@@ -182,6 +181,7 @@ export const updateBudgetForTransaction = internalMutation({
 
     await ctx.db.patch(budget._id, {
       spent: newSpent,
+      updatedAt: new Date().toISOString().split("T")[0] + "T00:00:00.000Z",
     });
 
     console.log(
