@@ -23,7 +23,7 @@ export const setBudget = mutation({
       .filter((q) => q.eq(q.field("category"), args.category))
       .first();
 
-    const oldLimit = existingBudget?.monthlyLimit;
+    const oldLimit = existingBudget?.monthlyLimit || 0;
     let resp;
 
     if (!existingBudget && args.monthlyLimit == 0)
@@ -78,11 +78,37 @@ export const setBudget = mutation({
   },
 });
 
+export const deleteBudgetMutation = mutation({
+  args: { budgetId: v.id("budgets") },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("UnAuthenticated!");
+
+    const budget = await ctx.db.get("budgets", args.budgetId);
+    if (budget?.userId !== userId) throw new Error("UnAuthorised!");
+
+    await ctx.runMutation(internal.budgets.deleteBudget, {
+      budgetId: args.budgetId,
+    });
+
+    return {
+      success: true,
+      status: 200,
+      budget_id: args.budgetId,
+      message: "Budget Deleted",
+    };
+  },
+});
+
 export const deleteBudget = internalMutation({
   args: { budgetId: v.id("budgets") },
   handler: async (ctx, args) => {
-    const deleted = await ctx.db.delete("budgets", args.budgetId);
-    console.log({ deleted });
+    await ctx.db.delete("budgets", args.budgetId);
+    return {
+      success: true,
+      status: 200,
+      budget_id: args.budgetId,
+    };
   },
 });
 
@@ -131,6 +157,7 @@ export const getBudgetStatus = query({
     const categories = budgets.map((budget) => ({
       id: budget._id,
       category: budget.category,
+      month: budget.month,
       limit: budget.monthlyLimit,
       spent: budget.spent,
       remaining: budget.monthlyLimit - budget.spent,

@@ -3,19 +3,19 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { toast } from "sonner";
 import { DeleteButton } from "./DeleteButton";
+import { Id } from "../../convex/_generated/dataModel";
+
+interface Budget {
+  id: Id<"budgets">;
+  category: string;
+  month: string;
+  limit: number;
+  spent: number;
+  remaining: number;
+  percentage: number;
+}
 
 export function BudgetManager() {
-  const [newBudget, setNewBudget] = useState({
-    category: "",
-    monthlyLimit: "",
-  });
-
-  const currentMonth = new Date().toISOString().substring(0, 7);
-  const budgetStatus = useQuery(api.budgets.getBudgetStatus, {
-    month: currentMonth,
-  });
-  const setBudget = useMutation(api.budgets.setBudget);
-
   const categories = [
     "Food & Dining",
     "Transportation",
@@ -27,6 +27,43 @@ export function BudgetManager() {
     "Travel",
     "Other",
   ];
+
+  const [newBudget, setNewBudget] = useState({
+    category: "",
+    monthlyLimit: "",
+  });
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const currentMonth = new Date().toISOString().substring(0, 7);
+  const budgetStatus = useQuery(api.budgets.getBudgetStatus, {
+    month: currentMonth,
+  });
+  const setBudget = useMutation(api.budgets.setBudget);
+  const deleteBudget = useMutation(api.budgets.deleteBudgetMutation);
+
+  const handleDelete = async (budget: Budget) => {
+    if (
+      !confirm(
+        `Delete Budget for category "${budget.category}" for the month of ${budget.month}?`
+      )
+    )
+      return;
+    setDeletingId(budget.id);
+    toast.promise(
+      deleteBudget({ budgetId: budget.id }).finally(() => setDeletingId(null)),
+      {
+        success: `Deleted budget category "${budget.category}" for the month of ${budget.month}`,
+        error: (error) => {
+          const message = error?.message || "";
+          const match = message.match(/Uncaught Error: (.+?)(?:\n|at handler)/);
+          const cleanError = match
+            ? match[1].trim()
+            : "Failed to delete budget";
+          return cleanError;
+        },
+      }
+    );
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -151,8 +188,8 @@ export function BudgetManager() {
                     </span>
                     <div className="w-5 md:w-0 md:group-hover:w-4 overflow-visible">
                       <DeleteButton
-                        onDelete={() => {}}
-                        isDeleting={false}
+                        onDelete={() => handleDelete(budget)}
+                        isDeleting={deletingId === budget.id}
                         itemName="budget"
                         size="md"
                         className="md:translate-x-2 md:group-hover:translate-x-0 transition-all duration-200 ease-out"
@@ -255,6 +292,7 @@ export function BudgetManager() {
           </button>
         </form>
       </div>
+      <div className="h-16" />
     </div>
   );
 }
