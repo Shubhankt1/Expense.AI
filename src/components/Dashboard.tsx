@@ -8,16 +8,23 @@ import { SpendingChart } from "./SpendingChart";
 import { InsightsPanel } from "./InsightsPanel";
 import { TransactionList } from "./TransactionList";
 import { StatementUpload } from "./StatementUpload";
+import { useDateFilter } from "@/hooks/useDateFilter";
+import { DateFilterTabs } from "./DateFilterTabs";
 
 export function Dashboard() {
+  const { dateRange, getMonthString } = useDateFilter();
+  //   console.log({ dateRange });
+  //   console.log(getMonthString());
+
   const [activeTab, setActiveTab] = useState("overview");
   const currentMonth = new Date().toISOString().substring(0, 7);
 
   const transactions = useQuery(api.transactions.getTransactions, {
-    limit: 10,
+    startDate: dateRange.startDate,
+    endDate: dateRange.endDate,
   });
   const spendingByCategory = useQuery(api.transactions.getSpendingByCategory, {
-    month: currentMonth,
+    month: getMonthString(),
     // month: "2025-11",
   });
   const monthlyTrends = useQuery(api.transactions.getMonthlyTrends, {
@@ -28,15 +35,6 @@ export function Dashboard() {
   });
   const savingsGoals = useQuery(api.savings.getSavingsGoals);
   const insights = useQuery(api.insights.getInsights);
-
-  //   console.log({
-  //     transactions,
-  //     spendingByCategory,
-  //     monthlyTrends,
-  //     budgetStatus,
-  //     savingsGoals,
-  //     insights,
-  //   });
 
   const tabs = [
     { id: "overview", label: "Overview", icon: "📊" },
@@ -62,12 +60,12 @@ export function Dashboard() {
   return (
     <div className="max-w-7xl mx-auto px-6 py-8">
       {/* Navigation Tabs */}
-      <div className="flex space-x-1 mb-8 bg-slate-100 p-1 rounded-lg overflow-x-auto">
+      <div className="flex space-x-1 mb-4 bg-slate-100 p-2 rounded-3xl overflow-x-auto">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${
+            className={`flex items-center space-x-2 px-4 py-2 rounded-2xl text-sm font-medium transition-colors whitespace-nowrap ${
               activeTab === tab.id
                 ? "bg-white text-emerald-700 shadow-sm"
                 : "text-slate-600 hover:text-slate-900"
@@ -77,6 +75,11 @@ export function Dashboard() {
             <span>{tab.label}</span>
           </button>
         ))}
+      </div>
+
+      {/* Date Filter Tabs */}
+      <div className="mb-8 flex justify-end">
+        <DateFilterTabs />
       </div>
 
       {/* Tab Content */}

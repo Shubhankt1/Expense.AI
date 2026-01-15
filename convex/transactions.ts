@@ -50,34 +50,41 @@ export const addTransaction = mutation({
 
 export const getTransactions = query({
   args: {
+    startDate: v.optional(v.string()),
+    endDate: v.optional(v.string()),
     limit: v.optional(v.number()),
-    month: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
-    if (!userId) {
-      return [];
-    }
+    if (!userId) return [];
 
-    let query = ctx.db
+    const queryBuilder = ctx.db
       .query("transactions")
-      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .withIndex("by_user_and_date", (q) => {
+        const filtered = q.eq("userId", userId);
+
+        if (args.startDate && args.endDate && args.startDate > args.endDate)
+          throw new Error("Start Date cannot be later than End Date!");
+
+        if (args.startDate && args.endDate && args.startDate <= args.endDate)
+          return filtered.gte("date", args.startDate).lte("date", args.endDate);
+
+        if (args.startDate) {
+          return filtered.gte("date", args.startDate);
+        }
+        if (args.endDate) {
+          return filtered.lte("date", args.endDate);
+        }
+
+        return filtered;
+      })
       .order("desc");
 
-    if (args.month) {
-      query = ctx.db
-        .query("transactions")
-        .withIndex("by_user_and_date", (q) => q.eq("userId", userId))
-        .filter((q) => q.gte(q.field("date"), args.month + "-01"))
-        .filter((q) => q.lt(q.field("date"), args.month + "-32"))
-        .order("desc");
-    }
-
     if (args.limit) {
-      return await query.take(args.limit);
+      return await queryBuilder.take(args.limit);
     }
 
-    return await query.collect();
+    return await queryBuilder.collect();
   },
 });
 

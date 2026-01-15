@@ -4,6 +4,7 @@ import { api } from "../../convex/_generated/api";
 import { toast } from "sonner";
 import { DeleteButton } from "./DeleteButton";
 import { Id } from "../../convex/_generated/dataModel";
+import { useDateFilter } from "@/hooks/useDateFilter";
 
 interface Budget {
   id: Id<"budgets">;
@@ -28,15 +29,18 @@ export function BudgetManager() {
     "Other",
   ];
 
+  const { dateRange, getMonthString } = useDateFilter();
+
   const [newBudget, setNewBudget] = useState({
     category: "",
     monthlyLimit: "",
   });
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const currentMonth = new Date().toISOString().substring(0, 7);
+  //   const currentMonth = new Date().toISOString().substring(0, 7);
+
   const budgetStatus = useQuery(api.budgets.getBudgetStatus, {
-    month: currentMonth,
+    month: getMonthString(),
   });
   const setBudget = useMutation(api.budgets.setBudget);
   const deleteBudget = useMutation(api.budgets.deleteBudgetMutation);
@@ -77,7 +81,7 @@ export function BudgetManager() {
       const resp = await setBudget({
         category: newBudget.category,
         monthlyLimit: parseFloat(newBudget.monthlyLimit),
-        month: currentMonth,
+        month: getMonthString(),
       });
       if (resp.operation === "delete")
         toast.success("Budget deleted successfully");
@@ -103,10 +107,13 @@ export function BudgetManager() {
       <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
         <h2 className="text-xl font-semibold text-slate-900 mb-4">
           Budget Overview -{" "}
-          {new Date().toLocaleDateString("en-US", {
-            month: "long",
-            year: "numeric",
-          })}
+          {new Date(dateRange.endDate || new Date()).toLocaleDateString(
+            "en-US",
+            {
+              month: "long",
+              year: "numeric",
+            }
+          )}
         </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
