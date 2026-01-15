@@ -1,3 +1,8 @@
+import {
+  getCurrentMonth,
+  getMonthEndISO,
+  getMonthStartISO,
+} from "@/lib/dateUtils";
 import { createContext, useState, ReactNode } from "react";
 
 interface DateFilter {
@@ -36,23 +41,20 @@ export function DateFilterProvider({ children }: { children: ReactNode }) {
 
     switch (filter.type) {
       case "this_month": {
-        const year = now.getFullYear();
-        // const month = String(now.getMonth() + 1).padStart(2, "0");
-        const lastDay = new Date(year, now.getMonth() + 1, 0);
+        const month = getCurrentMonth();
         return {
-          startDate: `${now.toISOString().substring(0, 7)}-01T00:00:00.000Z`,
-          endDate: `${lastDay.toISOString().split("T")[0]}T23:59:59.999Z`,
+          startDate: getMonthStartISO(month),
+          endDate: getMonthEndISO(month),
         };
       }
 
       case "last_month": {
         const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
         const year = lastMonth.getFullYear();
-        // const month = String(lastMonth.getMonth() + 1).padStart(2, "0");
         const lastDay = new Date(year, lastMonth.getMonth() + 1, 0);
         return {
-          startDate: `${lastMonth.toISOString().substring(0, 7)}-01T00:00:00.000Z`,
-          endDate: `${lastDay.toISOString().split("T")[0]}T23:59:59.999Z`,
+          startDate: getMonthStartISO(lastMonth),
+          endDate: getMonthEndISO(lastDay),
         };
       }
 
@@ -62,27 +64,21 @@ export function DateFilterProvider({ children }: { children: ReactNode }) {
           now.getMonth() - 2,
           1
         );
-        // const year = threeMonthsAgo.getFullYear();
-        // const month = String(threeMonthsAgo.getMonth() + 1).padStart(2, "0");
         const endYear = now.getFullYear();
-        // const endMonth = String(now.getMonth() + 1).padStart(2, "0");
         const endDay = new Date(endYear, now.getMonth() + 1, 0);
         return {
-          startDate: `${threeMonthsAgo.toISOString().substring(0, 7)}-01T00:00:00.000Z`,
-          endDate: `${endDay.toISOString().split("T")[0]}T23:59:59.999Z`,
+          startDate: getMonthStartISO(threeMonthsAgo),
+          endDate: getMonthEndISO(endDay),
         };
       }
 
       case "last_6_months": {
         const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
-        // const year = sixMonthsAgo.getFullYear();
-        // const month = String(sixMonthsAgo.getMonth() + 1).padStart(2, "0");
         const endYear = now.getFullYear();
-        // const endMonth = String(now.getMonth() + 1).padStart(2, "0");
         const endDay = new Date(endYear, now.getMonth() + 1, 0);
         return {
-          startDate: `${sixMonthsAgo.toISOString().substring(0, 7)}-01T00:00:00.000Z`,
-          endDate: `${endDay.toISOString().split("T")[0]}T23:59:59.999Z`,
+          startDate: getMonthStartISO(sixMonthsAgo),
+          endDate: getMonthEndISO(endDay),
         };
       }
 

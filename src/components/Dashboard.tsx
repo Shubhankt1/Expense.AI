@@ -10,6 +10,8 @@ import { TransactionList } from "./TransactionList";
 import { StatementUpload } from "./StatementUpload";
 import { useDateFilter } from "@/hooks/useDateFilter";
 import { DateFilterTabs } from "./DateFilterTabs";
+import { MonthSlider } from "./MonthSlider";
+import { FilterBadge } from "./FilterBadge";
 
 export function Dashboard() {
   const { dateRange, getMonthString } = useDateFilter();
@@ -77,10 +79,23 @@ export function Dashboard() {
         ))}
       </div>
 
-      {/* Date Filter Tabs */}
-      <div className="mb-8 flex justify-end">
-        <DateFilterTabs />
+      {/* Date Filter Section */}
+      <div className="mb-6 space-y-3">
+        {/* Desktop: Slider left, Tabs right */}
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <MonthSlider />
+          </div>
+          {/* Filter Badge */}
+          {/* <FilterBadge /> */}
+          <DateFilterTabs />
+        </div>
       </div>
+
+      {/* Date Filter Tabs */}
+      {/* <div className="mb-8 flex justify-end">
+        <DateFilterTabs />
+      </div> */}
 
       {/* Tab Content */}
       {activeTab === "overview" && (

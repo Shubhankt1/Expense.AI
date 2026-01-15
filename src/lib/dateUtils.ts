@@ -42,24 +42,39 @@ export function formatDate(isoString: string): string {
   });
 }
 
+export function getMonthStartISO(month: string): string;
+export function getMonthStartISO(date: Date): string;
 /**
  * Get month start as ISO
  * Input: "2024-12"
  * Output: "2024-12-01T00:00:00.000Z"
  */
-export function getMonthStartISO(month: string): string {
-  return `${month}-01T00:00:00.000Z`;
+export function getMonthStartISO(input: string | Date): string {
+  if (input instanceof Date) {
+    return `${input.toISOString().substring(0, 7)}-01T00:00:00.000Z`;
+  } else if (typeof input === "string") {
+    return `${input}-01T00:00:00.000Z`;
+  }
+  throw new Error("Invalid input type");
 }
 
+export function getMonthEndISO(month: string): string;
+export function getMonthEndISO(date: Date): string;
 /**
  * Get month end as ISO
  * Input: "2024-12"
  * Output: "2024-12-31T23:59:59.999Z"
  */
-export function getMonthEndISO(month: string): string {
-  const [year, monthNum] = month.split("-").map(Number);
-  const lastDay = new Date(year, monthNum, 0).getDate();
-  return `${month}-${String(lastDay).padStart(2, "0")}T23:59:59.999Z`;
+export function getMonthEndISO(input: string | Date): string {
+  if (input instanceof Date) {
+    const lastDay = new Date(input.getFullYear(), input.getMonth() + 1, 0);
+    return `${lastDay.toISOString().split("T")[0]}T23:59:59.999Z`;
+  } else if (typeof input === "string") {
+    const [year, monthNum] = input.split("-").map(Number);
+    const lastDay = new Date(year, monthNum, 0);
+    return `${lastDay.toISOString().split("T")[0]}T23:59:59.999Z`;
+  }
+  throw new Error("Invalid input type");
 }
 
 /**
@@ -67,19 +82,37 @@ export function getMonthEndISO(month: string): string {
  */
 export function getCurrentMonth(): string {
   const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  return `${year}-${month}`;
+  //   const year = now.getFullYear();
+  //   const month = String(now.getMonth() + 1).padStart(2, "0");
+  return now.toISOString().substring(0, 7);
 }
 
 /**
  *
  * @param isoString
- * @returns Year and Month
+ * @returns Month and year
+ * @example Input: "2024-12-25T00:00:00.000Z"
+ * @example Output: "December 2024"
  */
 export function dateToMonthLocaleString(isoString: string): string {
-  const date = isoString.split("T")[0];
-  return new Date(date + "T12:00:00.000Z").toLocaleDateString("en-US", {
+  if (isoString.includes("T")) {
+    return new Date(isoString).toLocaleDateString("en-US", {
+      month: "long",
+      year: "numeric",
+    });
+  }
+  return formatMonthString(isoString.substring(0, 7));
+}
+
+/**
+ * Format month string to readable format
+ * Input: "2024-12"
+ * Output: "December 2024"
+ */
+export function formatMonthString(month: string): string {
+  const [year, monthNum] = month.split("-");
+  const date = new Date(parseInt(year), parseInt(monthNum) - 1, 1);
+  return date.toLocaleDateString("en-US", {
     month: "long",
     year: "numeric",
   });
