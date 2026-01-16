@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { query, mutation, internalMutation } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
-import { internal } from "./_generated/api";
+import { api, internal } from "./_generated/api";
 
 export const setBudget = mutation({
   args: {
@@ -59,12 +59,20 @@ export const setBudget = mutation({
         };
       }
     } else {
+      const alreadySpent: number = await ctx.runQuery(
+        api.transactions.calculateCategorySpending,
+        {
+          userId: userId,
+          category: args.category,
+          month: args.month,
+        }
+      );
       const newBudget = await ctx.db.insert("budgets", {
         userId,
         category: args.category,
         monthlyLimit: args.monthlyLimit,
         month: args.month,
-        spent: 0,
+        spent: alreadySpent,
       });
       resp = {
         success: true,
@@ -139,7 +147,7 @@ export const getBudgetStatus = query({
     month: v.string(),
   },
   handler: async (ctx, args) => {
-    console.log("Getting budget status for month:", args.month);
+    // console.log("Getting budget status for month:", args.month);
     const userId = await getAuthUserId(ctx);
     if (!userId) {
       throw new Error("UnAuthenticated!");

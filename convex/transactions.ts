@@ -130,6 +130,96 @@ export const deleteTransaction = internalMutation({
   },
 });
 
+/**
+ * Get transactions for a specific category and month
+ */
+export const getTransactionsByCategoryAndMonth = query({
+  args: {
+    category: v.string(),
+    month: v.string(), // Format: "2024-12"
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return [];
+
+    // Calculate month boundaries
+    const monthStart = `${args.month}-01T00:00:00.000Z`;
+    const [year, monthNum] = args.month.split("-").map(Number);
+    const lastDay = new Date(year, monthNum, 0).getDate();
+    const monthEnd = `${args.month}-${String(lastDay).padStart(2, "0")}T23:59:59.999Z`;
+
+    // Use by_user_and_category index, filter by date
+    const transactions = await ctx.db
+      .query("transactions")
+      .withIndex("by_user_and_category", (q) =>
+        q.eq("userId", userId).eq("category", args.category)
+      )
+      .filter((q) =>
+        q.and(
+          q.gte(q.field("date"), monthStart),
+          q.lte(q.field("date"), monthEnd)
+        )
+      )
+      .collect();
+
+    return transactions;
+  },
+});
+
+/**
+ * Calculate total spending for a category in a month
+ * Internal query - used by budget mutations
+ */
+export const calculateCategorySpending = query({
+  args: {
+    userId: v.id("users"),
+    category: v.string(),
+    month: v.string(),
+  },
+  handler: async (ctx, args) => {
+    // Calculate month boundaries
+    const monthStart = `${args.month}-01T00:00:00.000Z`;
+    const [year, monthNum] = args.month.split("-").map(Number);
+    const lastDay = new Date(year, monthNum, 0).getDate();
+    const monthEnd = `${args.month}-${String(lastDay).padStart(2, "0")}T23:59:59.999Z`;
+
+    // Use by_user_and_category index, filter by date
+    const transactions = await ctx.db
+      .query("transactions")
+      .withIndex("by_user_and_category", (q) =>
+        q.eq("userId", args.userId).eq("category", args.category)
+      )
+      .filter((q) =>
+        q.and(
+          q.gte(q.field("date"), monthStart),
+          q.lte(q.field("date"), monthEnd)
+        )
+      )
+      .collect();
+
+    // Calculate net spending
+    const totalSpent = transactions.reduce((sum, txn) => {
+      if (txn.type === "expense") {
+        return sum + txn.amount;
+      } else if (txn.type === "income") {
+        // Refunds reduce spending
+        const isRefund =
+          txn.description.toLowerCase().includes("refund") ||
+          txn.description.toLowerCase().includes("return") ||
+          txn.description.toLowerCase().includes("credit");
+
+        if (isRefund) {
+          return sum - txn.amount;
+        }
+      }
+      return sum;
+    }, 0);
+
+    return totalSpent;
+  },
+});
+
+// TODO: recheck these functions below
 export const getSpendingByCategory = query({
   args: {
     month: v.optional(v.string()),
