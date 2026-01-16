@@ -40,6 +40,7 @@ export const setBudget = mutation({
           operation: "delete",
           budget_id: existingBudget._id,
           existing_budget: true,
+          month: existingBudget.month,
         };
       } else {
         await ctx.db.patch(existingBudget._id, {
@@ -54,6 +55,7 @@ export const setBudget = mutation({
           existing_budget: true,
           old_limit: oldLimit,
           new_limit: args.monthlyLimit,
+          month: existingBudget.month,
         };
       }
     } else {
@@ -71,9 +73,10 @@ export const setBudget = mutation({
         budget_id: newBudget,
         existing_budget: false,
         new_limit: args.monthlyLimit,
+        month: args.month,
       };
     }
-    console.log({ resp });
+    // console.log({ resp });
     return resp;
   },
 });
@@ -136,6 +139,7 @@ export const getBudgetStatus = query({
     month: v.string(),
   },
   handler: async (ctx, args) => {
+    console.log("Getting budget status for month:", args.month);
     const userId = await getAuthUserId(ctx);
     if (!userId) {
       throw new Error("UnAuthenticated!");
@@ -148,6 +152,7 @@ export const getBudgetStatus = query({
       )
       .collect();
 
+    // console.log({ budgets });
     const totalBudget = budgets.reduce(
       (sum, budget) => sum + budget.monthlyLimit,
       0

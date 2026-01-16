@@ -29,13 +29,23 @@ export function getTodayISO(): string {
 }
 
 /**
+ * Extract month string from ISO date
+ * Input: "2024-12-25T00:00:00.000Z"
+ * Output: "2024-12"
+ */
+export function isoToMonthString(isoString: string): string {
+  return isoString.substring(0, 7);
+}
+
+/**
  * Format ISO string for display
  * Input: "2024-12-25T00:00:00.000Z"
  * Output: "Dec 25, 2024"
  */
 export function formatDate(isoString: string): string {
   const date = isoString.split("T")[0]; // Get just the date part
-  return new Date(date + "T12:00:00.000Z").toLocaleDateString("en-US", {
+  const [year, month, day] = date.split("-").map(Number);
+  return new Date(year, month - 1, day).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",
@@ -82,8 +92,6 @@ export function getMonthEndISO(input: string | Date): string {
  */
 export function getCurrentMonth(): string {
   const now = new Date();
-  //   const year = now.getFullYear();
-  //   const month = String(now.getMonth() + 1).padStart(2, "0");
   return now.toISOString().substring(0, 7);
 }
 
@@ -96,7 +104,8 @@ export function getCurrentMonth(): string {
  */
 export function dateToMonthLocaleString(isoString: string): string {
   if (isoString.includes("T")) {
-    return new Date(isoString).toLocaleDateString("en-US", {
+    const [year, month, day] = isoString.split("T")[0].split("-").map(Number);
+    return new Date(year, month - 1, day).toLocaleDateString("en-US", {
       month: "long",
       year: "numeric",
     });

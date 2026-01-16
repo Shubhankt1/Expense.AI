@@ -5,6 +5,12 @@ import { toast } from "sonner";
 import { DeleteButton } from "./DeleteButton";
 import { Id } from "../../convex/_generated/dataModel";
 import { useDateFilter } from "@/hooks/useDateFilter";
+import {
+  dateToMonthLocaleString,
+  getCurrentMonth,
+  getTodayISO,
+  isoToMonthString,
+} from "@/lib/dateUtils";
 
 interface Budget {
   id: Id<"budgets">;
@@ -29,7 +35,8 @@ export function BudgetManager() {
     "Other",
   ];
 
-  const { dateRange, getMonthString } = useDateFilter();
+  const { dateRange } = useDateFilter();
+  console.log({ dateRange });
 
   const [newBudget, setNewBudget] = useState({
     category: "",
@@ -40,7 +47,7 @@ export function BudgetManager() {
   //   const currentMonth = new Date().toISOString().substring(0, 7);
 
   const budgetStatus = useQuery(api.budgets.getBudgetStatus, {
-    month: getMonthString(),
+    month: isoToMonthString(dateRange.startDate || getCurrentMonth()),
   });
   const setBudget = useMutation(api.budgets.setBudget);
   const deleteBudget = useMutation(api.budgets.deleteBudgetMutation);
@@ -81,7 +88,7 @@ export function BudgetManager() {
       const resp = await setBudget({
         category: newBudget.category,
         monthlyLimit: parseFloat(newBudget.monthlyLimit),
-        month: getMonthString(),
+        month: isoToMonthString(dateRange.startDate || getCurrentMonth()),
       });
       if (resp.operation === "delete")
         toast.success("Budget deleted successfully");
@@ -107,13 +114,7 @@ export function BudgetManager() {
       <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
         <h2 className="text-xl font-semibold text-slate-900 mb-4">
           Budget Overview -{" "}
-          {new Date(dateRange.endDate || new Date()).toLocaleDateString(
-            "en-US",
-            {
-              month: "long",
-              year: "numeric",
-            }
-          )}
+          {dateToMonthLocaleString(dateRange.startDate || getTodayISO())}
         </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -202,13 +203,6 @@ export function BudgetManager() {
                         className="md:translate-x-2 md:group-hover:translate-x-0 transition-all duration-200 ease-out"
                       />
                     </div>
-                    {/* <DeleteButton
-                      onDelete={() => {
-                        console.log("deleted");
-                      }}
-                      isDeleting={false}
-                      itemName="Budget"
-                    /> */}
                   </div>
                 </div>
 
