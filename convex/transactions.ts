@@ -21,7 +21,7 @@ export const addTransaction = mutation({
     const transactionId = await ctx.db.insert("transactions", {
       userId,
       ...args,
-      date: args.date + "T00:00:00.000Z",
+      date: args.date,
     });
 
     // Update budget spending if it's an expense
@@ -29,7 +29,7 @@ export const addTransaction = mutation({
     const existingBudget = await ctx.db
       .query("budgets")
       .withIndex("by_user_and_month", (q) =>
-        q.eq("userId", userId).eq("month", month)
+        q.eq("userId", userId).eq("month", month),
       )
       .filter((q) => q.eq(q.field("category"), args.category))
       .first();
@@ -102,7 +102,7 @@ export const deleteTransactionTask = mutation({
       internal.transactions.deleteTransaction,
       {
         id: args.id,
-      }
+      },
     );
     console.log({ deletedRes });
 
@@ -114,7 +114,7 @@ export const deleteTransactionTask = mutation({
         month: transaction.date.substring(0, 7),
         amount: transaction.amount,
         transactionType: transaction.type,
-      }
+      },
     );
     console.log({ patchResp });
   },
@@ -152,13 +152,13 @@ export const getTransactionsByCategoryAndMonth = query({
     const transactions = await ctx.db
       .query("transactions")
       .withIndex("by_user_and_category", (q) =>
-        q.eq("userId", userId).eq("category", args.category)
+        q.eq("userId", userId).eq("category", args.category),
       )
       .filter((q) =>
         q.and(
           q.gte(q.field("date"), monthStart),
-          q.lte(q.field("date"), monthEnd)
-        )
+          q.lte(q.field("date"), monthEnd),
+        ),
       )
       .collect();
 
@@ -187,13 +187,13 @@ export const calculateCategorySpending = query({
     const transactions = await ctx.db
       .query("transactions")
       .withIndex("by_user_and_category", (q) =>
-        q.eq("userId", args.userId).eq("category", args.category)
+        q.eq("userId", args.userId).eq("category", args.category),
       )
       .filter((q) =>
         q.and(
           q.gte(q.field("date"), monthStart),
-          q.lte(q.field("date"), monthEnd)
-        )
+          q.lte(q.field("date"), monthEnd),
+        ),
       )
       .collect();
 

@@ -37,7 +37,7 @@ export const processStatementMutation = mutation({
       {
         ...args,
         userId,
-      }
+      },
     );
     return jobId;
   },
@@ -188,7 +188,7 @@ export const addExtractedTransactionsBatch = internalMutation({
         date: v.string(),
         type: v.union(v.literal("income"), v.literal("expense")),
         source: v.string(),
-      })
+      }),
     ),
   },
   handler: async (ctx, args) => {
@@ -197,12 +197,16 @@ export const addExtractedTransactionsBatch = internalMutation({
 
     for (const transaction of args.transactions) {
       // 1. Insert the transaction
+      const transactionDate = transaction.date.includes("T")
+        ? transaction.date
+        : transaction.date + "T00:00:00.000Z";
+
       await ctx.db.insert("transactions", {
         userId: args.userId,
         amount: transaction.amount,
         description: transaction.description,
         category: transaction.category,
-        date: transaction.date + "T00:00:00.000Z",
+        date: transactionDate,
         type: transaction.type,
         isRecurring: false,
       });
@@ -213,7 +217,7 @@ export const addExtractedTransactionsBatch = internalMutation({
       const existingBudget = await ctx.db
         .query("budgets")
         .withIndex("by_user_and_month", (q) =>
-          q.eq("userId", args.userId).eq("month", month)
+          q.eq("userId", args.userId).eq("month", month),
         )
         .filter((q) => q.eq(q.field("category"), transaction.category))
         .first();
@@ -244,7 +248,7 @@ export const addExtractedTransactionsBatch = internalMutation({
           spent: newSpent,
         });
         console.log(
-          `Updated budget ${budget.category}: ${budget.spent} -> ${newSpent}`
+          `Updated budget ${budget.category}: ${budget.spent} -> ${newSpent}`,
         );
       }
     }

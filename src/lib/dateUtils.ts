@@ -4,8 +4,12 @@
  * Convert date input to ISO string (midnight UTC)
  * Input: "2024-12-25" (from <input type="date">)
  * Output: "2024-12-25T00:00:00.000Z"
+ * Defensive: if already contains "T", returns as-is
  */
 export function dateInputToISO(dateInput: string): string {
+  if (dateInput.includes("T")) {
+    return dateInput;
+  }
   return dateInput + "T00:00:00.000Z";
 }
 
