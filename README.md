@@ -33,7 +33,6 @@ A Personal Finance Manager and Budgeting tool that leverages AI to provide intel
   - [Installation](#installation)
   - [Development](#development)
   - [Building](#building)
-- [Usage](#usage)
 - [Contributing](#contributing)
 - [Troubleshooting](#troubleshooting)
 - [References](#references)
