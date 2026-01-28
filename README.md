@@ -22,7 +22,7 @@ A Personal Finance Manager and Budgeting tool that leverages AI to provide intel
 
 ---
 
-## 📋 Table of Contents
+## Table of Contents
 
 - [Overview](#overview)
 - [Features](#features)
@@ -39,7 +39,7 @@ A Personal Finance Manager and Budgeting tool that leverages AI to provide intel
 
 ---
 
-## 🎯 Overview
+## Overview
 
 Expense.AI is an intelligent personal finance management platform that combines powerful expense tracking with AI-driven insights. Built with modern technologies and a focus on user experience, it helps users understand their spending patterns, manage budgets effectively, and make smarter financial decisions.
 
@@ -47,7 +47,7 @@ The platform leverages Google's Gemini AI to analyze financial data and provide 
 
 ---
 
-## ✨ Features
+## Features
 
 ### Core Functionality
 
@@ -72,7 +72,7 @@ The platform leverages Google's Gemini AI to analyze financial data and provide 
 
 ---
 
-## 🛠 Tech Stack
+## Tech Stack
 
 ### Frontend
 
@@ -102,7 +102,7 @@ The platform leverages Google's Gemini AI to analyze financial data and provide 
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 Expense.AI/
@@ -159,7 +159,7 @@ Expense.AI/
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
@@ -253,7 +253,7 @@ This will:
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 We welcome contributions! Please see our [CONTRIBUTING.md](CONTRIBUTING.md) for:
 
@@ -284,7 +284,7 @@ git push origin feature/amazing-feature
 
 ---
 
-## 🆘 Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 
@@ -375,7 +375,7 @@ npm run build
 
 ---
 
-## 📚 References
+## References
 
 ### Documentation
 
@@ -402,13 +402,13 @@ npm run build
 
 ---
 
-## 📝 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
-## 👨‍💻 Author
+## Author
 
 **Shubhank Tyagi**
 
@@ -417,7 +417,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - [Convex](https://convex.dev) for the excellent backend platform
 - [Google AI](https://ai.google.dev/) for Gemini API
