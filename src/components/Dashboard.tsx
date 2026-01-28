@@ -11,7 +11,7 @@ import { StatementUpload } from "./StatementUpload";
 import { useDateFilter } from "@/hooks/useDateFilter";
 import { DateFilterTabs } from "./DateFilterTabs";
 import { MonthSlider } from "./MonthSlider";
-import { FilterBadge } from "./FilterBadge";
+import { getCurrentMonth, isoToMonthString } from "@/lib/dateUtils";
 
 export function Dashboard() {
   const { dateRange, getMonthString } = useDateFilter();
@@ -19,7 +19,7 @@ export function Dashboard() {
   //   console.log(getMonthString());
 
   const [activeTab, setActiveTab] = useState("overview");
-  const currentMonth = new Date().toISOString().substring(0, 7);
+  //   const currentMonth = new Date().toISOString().substring(0, 7);
 
   const transactions = useQuery(api.transactions.getTransactions, {
     startDate: dateRange.startDate,
@@ -33,7 +33,7 @@ export function Dashboard() {
     months: 6,
   });
   const budgetStatus = useQuery(api.budgets.getBudgetStatus, {
-    month: currentMonth,
+    month: isoToMonthString(dateRange.startDate || getCurrentMonth()),
   });
   const savingsGoals = useQuery(api.savings.getSavingsGoals);
   const insights = useQuery(api.insights.getInsights);

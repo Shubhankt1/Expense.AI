@@ -9,7 +9,7 @@ export function LandingPage() {
             <div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-sm">$</span>
             </div>
-            <h1 className="text-xl font-semibold text-slate-900">FinanceAI</h1>
+            <h1 className="text-xl font-semibold text-slate-900">Expense.AI</h1>
           </div>
         </div>
       </header>

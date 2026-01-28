@@ -11,7 +11,7 @@ export function SignInForm() {
   return (
     <div className="w-full">
       <form
-        className="flex flex-col gap-form-field"
+        className="flex flex-col gap-form-field items-center"
         onSubmit={(e) => {
           e.preventDefault();
           setSubmitting(true);
@@ -30,8 +30,7 @@ export function SignInForm() {
               let toastTitle = "";
 
               if (error.message.includes("Invalid password")) {
-                toastTitle =
-                  "Password must be at least 8 characters with uppercase, lowercase, and number";
+                toastTitle = "Incorrect password.";
               } else if (error.message.includes("already exists")) {
                 toastTitle = "Email already exists. Try signing in instead.";
               } else if (error.message.includes("not found")) {
@@ -49,17 +48,17 @@ export function SignInForm() {
         }}
       >
         <input
-          className="auth-input-field"
+          className="auth-input-field mb-2"
           type="email"
           name="email"
           placeholder="Email"
           required
         />
         <input
-          className="auth-input-field"
+          className="auth-input-field mb-6"
           type="password"
           name="password"
-          placeholder="Password (min 8 chars, 1 upper, 1 lower, 1 number)"
+          placeholder="Password"
           required
           minLength={8}
         />
@@ -69,7 +68,11 @@ export function SignInForm() {
             number
           </p>
         )}
-        <button className="auth-button" type="submit" disabled={submitting}>
+        <button
+          className="auth-button max-w-[256px] mb-2"
+          type="submit"
+          disabled={submitting}
+        >
           {submitting
             ? "Loading..."
             : flow === "signIn"
@@ -96,9 +99,14 @@ export function SignInForm() {
         <span className="mx-4 text-secondary">or</span>
         <hr className="my-4 grow border-gray-200" />
       </div>
-      <button className="auth-button" onClick={() => void signIn("anonymous")}>
-        Sign in anonymously
-      </button>
+      <div className="flex justify-center">
+        <button
+          className="auth-button max-w-[256px] !bg-blue-400"
+          onClick={() => void signIn("anonymous")}
+        >
+          Sign in anonymously
+        </button>
+      </div>
     </div>
   );
 }
