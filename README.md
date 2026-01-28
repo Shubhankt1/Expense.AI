@@ -184,7 +184,7 @@ git --version   # 2.0.0+
 1. **Clone the repository**
 
    ```bash
-   git clone https://github.com/shubhanktyagi/Expense.AI.git
+   git clone https://github.com/Shubhankt1/Expense.AI.git
    cd Expense.AI
    ```
 
@@ -370,7 +370,7 @@ npm run build
 
 - 📖 [Convex Documentation](https://docs.convex.dev/)
 - 💬 [Convex Discord Community](https://discord.gg/convex)
-- 🐛 [GitHub Issues](https://github.com/shubhanktyagi/Expense.AI/issues)
+- 🐛 [GitHub Issues](https://github.com/Shubhankt1/Expense.AI/issues)
 - 📝 [TypeScript Handbook](https://www.typescriptlang.org/docs/)
 
 ---
@@ -412,8 +412,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Shubhank Tyagi**
 
-- GitHub: [@shubhanktyagi](https://github.com/shubhanktyagi)
-- Project: [Expense.AI](https://github.com/shubhanktyagi/Expense.AI)
+- GitHub: [@Shubhankt1](https://github.com/Shubhankt1)
+- Project: [Expense.AI](https://github.com/Shubhankt1/Expense.AI)
 
 ---
 
