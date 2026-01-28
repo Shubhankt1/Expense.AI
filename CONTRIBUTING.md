@@ -99,17 +99,17 @@ We follow [Conventional Commits](https://www.conventionalcommits.org/) specifica
 
 ### Types
 
-- **feat**: A new feature
-- **fix**: A bug fix
-- **docs**: Documentation only changes
-- **style**: Code style changes (formatting, semicolons, etc)
-- **refactor**: Code change that neither fixes a bug nor adds a feature
-- **perf**: Performance improvements
-- **test**: Adding or updating tests
-- **build**: Changes to build system or dependencies
-- **ci**: Changes to CI configuration
-- **chore**: Other changes that don't modify src or test files
-- **revert**: Reverts a previous commit
+- `feat`: A new feature
+- `fix`: A bug fix
+- `docs`: Documentation only changes
+- `style`: Code style changes (formatting, semicolons, etc)
+- `refactor`: Code change that neither fixes a bug nor adds a feature
+- `perf`: Performance improvements
+- `test`: Adding or updating tests
+- `build`: Changes to build system or dependencies
+- `ci`: Changes to CI configuration
+- `chore`: Other changes that don't modify src or test files
+- `revert`: Reverts a previous commit
 
 ### Examples
 
