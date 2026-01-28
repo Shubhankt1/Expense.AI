@@ -62,14 +62,12 @@ export function TransactionForm() {
 
   if (!isOpen) {
     return (
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
-        <button
-          onClick={() => setIsOpen(true)}
-          className="w-full py-3 px-4 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors font-medium"
-        >
-          + Add Transaction
-        </button>
-      </div>
+      <button
+        onClick={() => setIsOpen(true)}
+        className="w-full py-3 px-4 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors font-medium flex items-center justify-center gap-2"
+      >
+        + Add Transaction
+      </button>
     );
   }
 
@@ -87,7 +85,7 @@ export function TransactionForm() {
         </button>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">

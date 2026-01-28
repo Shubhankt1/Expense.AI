@@ -1,10 +1,11 @@
 import { dateToMonthLocaleString, formatDate } from "@/lib/dateUtils";
 import { useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Id } from "../../convex/_generated/dataModel";
 import { DeleteButton } from "./DeleteButton";
+import { TransactionSort } from "./TransactionSort";
 
 interface Transaction {
   _id: string;
@@ -23,19 +24,42 @@ interface TransactionListProps {
 export function TransactionList({ transactions }: TransactionListProps) {
   const deleteTransaction = useMutation(api.transactions.deleteTransactionTask);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState("date-desc");
+
+  const sortedTransactions = useMemo(() => {
+    if (!transactions) return [];
+    const sorted = [...transactions];
+
+    switch (sortBy) {
+      case "date-desc":
+        return sorted.sort(
+          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+        );
+      case "date-asc":
+        return sorted.sort(
+          (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+        );
+      case "amount-desc":
+        return sorted.sort((a, b) => b.amount - a.amount);
+      case "amount-asc":
+        return sorted.sort((a, b) => a.amount - b.amount);
+      default:
+        return sorted;
+    }
+  }, [transactions, sortBy]);
 
   const handleDelete = async (transac: Transaction) => {
     if (
       !confirm(
         `Delete transaction?\n${transac.description}: $${transac.amount}.\n\n` +
-          `Deleting will recalculate your budget:\n${transac.category}:${dateToMonthLocaleString(transac.date)}`
+          `Deleting will recalculate your budget:\n${transac.category}:${dateToMonthLocaleString(transac.date)}`,
       )
     )
       return;
     setDeletingId(transac._id);
     toast.promise(
       deleteTransaction({ id: transac._id as Id<"transactions"> }).finally(() =>
-        setDeletingId(null)
+        setDeletingId(null),
       ),
       {
         success: `Deleted ${transac.description.substring(0, 10)}... of $${transac.amount.toFixed(2)}`,
@@ -47,7 +71,7 @@ export function TransactionList({ transactions }: TransactionListProps) {
             : "Failed to delete transaction";
           return cleanError;
         },
-      }
+      },
     );
   };
 
@@ -60,53 +84,61 @@ export function TransactionList({ transactions }: TransactionListProps) {
   }
 
   return (
-    <div className="space-y-3">
-      {transactions.map((transaction) => (
-        <div
-          key={transaction._id}
-          className="group flex items-center justify-between p-4 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors"
-        >
-          <div className="flex-1">
-            <div className="flex items-center space-x-3">
-              <div
-                className={`w-3 h-3 rounded-full ${
-                  transaction.type === "income"
-                    ? "bg-emerald-500"
-                    : "bg-red-500"
-                }`}
-              />
-              <div>
-                <p className="font-medium text-slate-900">
-                  {transaction.description}
-                </p>
-                <p className="text-sm text-slate-500">{transaction.category}</p>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold text-slate-900">Transactions</h3>
+        <TransactionSort currentSort={sortBy} onSortChange={setSortBy} />
+      </div>
+      <div className="space-y-3">
+        {sortedTransactions.map((transaction) => (
+          <div
+            key={transaction._id}
+            className="group flex items-center justify-between p-4 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors"
+          >
+            <div className="flex-1">
+              <div className="flex items-center space-x-3">
+                <div
+                  className={`w-3 h-3 rounded-full ${
+                    transaction.type === "income"
+                      ? "bg-emerald-500"
+                      : "bg-red-500"
+                  }`}
+                />
+                <div>
+                  <p className="font-medium text-slate-900">
+                    {transaction.description}
+                  </p>
+                  <p className="text-sm text-slate-500">
+                    {transaction.category}
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="text-right">
-            <p
-              className={`font-semibold ${
-                transaction.type === "income"
-                  ? "text-emerald-600"
-                  : "text-red-600"
-              }`}
-            >
-              {transaction.type === "income" ? "+" : "-"}$
-              {Math.abs(transaction.amount).toFixed(2)}
-            </p>
-            <p className="text-sm text-slate-500">
-              {formatDate(transaction.date)}
-            </p>
+            <div className="text-right">
+              <p
+                className={`font-semibold ${
+                  transaction.type === "income"
+                    ? "text-emerald-600"
+                    : "text-red-600"
+                }`}
+              >
+                {transaction.type === "income" ? "+" : "-"}$
+                {Math.abs(transaction.amount).toFixed(2)}
+              </p>
+              <p className="text-sm text-slate-500">
+                {formatDate(transaction.date)}
+              </p>
+            </div>
+            <DeleteButton
+              onDelete={() => handleDelete(transaction)}
+              isDeleting={deletingId === transaction._id}
+              className="ml-4"
+              itemName="transaction"
+            />
           </div>
-          <DeleteButton
-            onDelete={() => handleDelete(transaction)}
-            isDeleting={deletingId === transaction._id}
-            className="ml-4"
-            itemName="transaction"
-          />
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }
