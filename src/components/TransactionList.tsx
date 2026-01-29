@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Id } from "../../convex/_generated/dataModel";
 import { DeleteButton } from "./DeleteButton";
 import { TransactionSort } from "./TransactionSort";
+import { SearchBar } from "./SearchBar";
 
 interface Transaction {
   _id: string;
@@ -25,11 +26,22 @@ export function TransactionList({ transactions }: TransactionListProps) {
   const deleteTransaction = useMutation(api.transactions.deleteTransactionTask);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState("date-desc");
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const sortedTransactions = useMemo(() => {
+  const filteredAndSortedTransactions = useMemo(() => {
     if (!transactions) return [];
-    const sorted = [...transactions];
+    
+    // Filter by search query
+    let filtered = transactions;
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = transactions.filter((t) =>
+        t.description.toLowerCase().includes(query)
+      );
+    }
 
+    // Sort filtered results
+    const sorted = [...filtered];
     switch (sortBy) {
       case "date-desc":
         return sorted.sort(
@@ -46,7 +58,7 @@ export function TransactionList({ transactions }: TransactionListProps) {
       default:
         return sorted;
     }
-  }, [transactions, sortBy]);
+  }, [transactions, sortBy, searchQuery]);
 
   const handleDelete = async (transac: Transaction) => {
     if (
@@ -83,14 +95,46 @@ export function TransactionList({ transactions }: TransactionListProps) {
     );
   }
 
+  if (filteredAndSortedTransactions.length === 0 && searchQuery) {
+    return (
+      <div className="space-y-4">
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-slate-900">Transactions</h3>
+            <TransactionSort currentSort={sortBy} onSortChange={setSortBy} />
+          </div>
+          
+          <SearchBar
+            value={searchQuery}
+            onChange={setSearchQuery}
+            placeholder="Search transactions..."
+          />
+        </div>
+        
+        <div className="text-center py-8 text-slate-500">
+          <p>No transactions found matching "{searchQuery}"</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-slate-900">Transactions</h3>
-        <TransactionSort currentSort={sortBy} onSortChange={setSortBy} />
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold text-slate-900">Transactions</h3>
+          <TransactionSort currentSort={sortBy} onSortChange={setSortBy} />
+        </div>
+        
+        <SearchBar
+          value={searchQuery}
+          onChange={setSearchQuery}
+          placeholder="Search transactions..."
+        />
       </div>
+      
       <div className="space-y-3">
-        {sortedTransactions.map((transaction) => (
+        {filteredAndSortedTransactions.map((transaction) => (
           <div
             key={transaction._id}
             className="group flex items-center justify-between p-4 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors"

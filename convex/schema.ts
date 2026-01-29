@@ -14,7 +14,11 @@ const applicationTables = {
   })
     .index("by_user", ["userId"])
     .index("by_user_and_date", ["userId", "date"])
-    .index("by_user_and_category", ["userId", "category"]),
+    .index("by_user_and_category", ["userId", "category"])
+    .searchIndex("search_description", {
+      searchField: "description",
+      filterFields: ["userId"],
+    }),
 
   budgets: defineTable({
     userId: v.id("users"),

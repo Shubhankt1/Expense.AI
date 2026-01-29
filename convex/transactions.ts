@@ -88,6 +88,30 @@ export const getTransactions = query({
   },
 });
 
+export const searchTransactions = query({
+  args: {
+    searchQuery: v.string(),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return [];
+
+    if (!args.searchQuery.trim()) {
+      return [];
+    }
+
+    const results = await ctx.db
+      .query("transactions")
+      .withSearchIndex("search_description", (q) =>
+        q.search("description", args.searchQuery).eq("userId", userId)
+      )
+      .take(args.limit || 100);
+
+    return results;
+  },
+});
+
 export const deleteTransactionTask = mutation({
   args: { id: v.id("transactions") },
   handler: async (ctx, args) => {
