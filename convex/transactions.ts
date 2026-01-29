@@ -1,7 +1,8 @@
-import { v } from "convex/values";
+import { v, ConvexError } from "convex/values";
 import { query, mutation, internalMutation } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { internal } from "./_generated/api";
+import { ERROR_CODES } from "./errorCodes";
 
 export const addTransaction = mutation({
   args: {
@@ -15,7 +16,10 @@ export const addTransaction = mutation({
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) {
-      throw new Error("Not authenticated");
+      throw new ConvexError({
+        code: ERROR_CODES.UNAUTHENTICATED,
+        message: "You must be signed in to add a transaction.",
+      });
     }
 
     const transactionId = await ctx.db.insert("transactions", {
@@ -64,7 +68,10 @@ export const getTransactions = query({
         const filtered = q.eq("userId", userId);
 
         if (args.startDate && args.endDate && args.startDate > args.endDate)
-          throw new Error("Start Date cannot be later than End Date!");
+          throw new ConvexError({
+            code: ERROR_CODES.INVALID_INPUT,
+            message: "Start Date cannot be later than End Date!",
+          });
 
         if (args.startDate && args.endDate && args.startDate <= args.endDate)
           return filtered.gte("date", args.startDate).lte("date", args.endDate);
@@ -104,7 +111,7 @@ export const searchTransactions = query({
     const results = await ctx.db
       .query("transactions")
       .withSearchIndex("search_description", (q) =>
-        q.search("description", args.searchQuery).eq("userId", userId)
+        q.search("description", args.searchQuery).eq("userId", userId),
       )
       .take(args.limit || 100);
 
@@ -117,10 +124,18 @@ export const deleteTransactionTask = mutation({
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) {
-      throw new Error("UnAuthenticated!");
+      throw new ConvexError({
+        code: ERROR_CODES.UNAUTHENTICATED,
+        message: "You must be signed in to delete a transaction.",
+      });
     }
     const transaction = await ctx.db.get(args.id);
-    if (transaction?.userId !== userId) throw new Error("UnAuthorised!");
+    if (!transaction || transaction.userId !== userId) {
+      throw new ConvexError({
+        code: ERROR_CODES.NOT_FOUND,
+        message: "Transaction not found.",
+      });
+    }
 
     const deletedRes: any = await ctx.runMutation(
       internal.transactions.deleteTransaction,
@@ -147,8 +162,13 @@ export const deleteTransactionTask = mutation({
 export const deleteTransaction = internalMutation({
   args: { id: v.id("transactions") },
   handler: async (ctx, args) => {
-    const transaction = await ctx.db.get("transactions", args.id);
-    if (!transaction) throw new Error("Transaction not found");
+    const transaction = await ctx.db.get(args.id);
+    if (!transaction) {
+      throw new ConvexError({
+        code: ERROR_CODES.NOT_FOUND,
+        message: "Transaction not found.",
+      });
+    }
     await ctx.db.delete(args.id);
     return { deleted: true, status: 204 };
   },

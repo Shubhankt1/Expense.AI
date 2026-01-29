@@ -10,6 +10,7 @@
 
 import type * as auth from "../auth.js";
 import type * as budgets from "../budgets.js";
+import type * as errorCodes from "../errorCodes.js";
 import type * as gemini from "../gemini.js";
 import type * as http from "../http.js";
 import type * as insights from "../insights.js";
@@ -28,6 +29,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   budgets: typeof budgets;
+  errorCodes: typeof errorCodes;
   gemini: typeof gemini;
   http: typeof http;
   insights: typeof insights;

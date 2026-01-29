@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { toast } from "sonner";
+import { getErrorMessage } from "@/lib/errorUtils";
 
 export function SavingsGoals() {
   const [showForm, setShowForm] = useState(false);
@@ -29,8 +30,13 @@ export function SavingsGoals() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!newGoal.name || !newGoal.targetAmount || !newGoal.targetDate || !newGoal.category) {
+
+    if (
+      !newGoal.name ||
+      !newGoal.targetAmount ||
+      !newGoal.targetDate ||
+      !newGoal.category
+    ) {
       toast.error("Please fill in all fields");
       return;
     }
@@ -47,7 +53,8 @@ export function SavingsGoals() {
       setNewGoal({ name: "", targetAmount: "", targetDate: "", category: "" });
       setShowForm(false);
     } catch (error) {
-      toast.error("Failed to create savings goal");
+      toast.error(getErrorMessage(error));
+      console.error("Failed to create savings goal:", error);
     }
   };
 
@@ -62,7 +69,8 @@ export function SavingsGoals() {
       await updateSavingsProgress({ goalId: goalId as any, amount: amountNum });
       toast.success("Progress updated successfully");
     } catch (error) {
-      toast.error("Failed to update progress");
+      toast.error(getErrorMessage(error));
+      console.error("Failed to update progress:", error);
     }
   };
 
@@ -90,8 +98,10 @@ export function SavingsGoals() {
       {/* New Goal Form */}
       {showForm && (
         <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
-          <h3 className="text-lg font-semibold text-slate-900 mb-4">Create New Savings Goal</h3>
-          
+          <h3 className="text-lg font-semibold text-slate-900 mb-4">
+            Create New Savings Goal
+          </h3>
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -101,7 +111,9 @@ export function SavingsGoals() {
                 <input
                   type="text"
                   value={newGoal.name}
-                  onChange={(e) => setNewGoal({ ...newGoal, name: e.target.value })}
+                  onChange={(e) =>
+                    setNewGoal({ ...newGoal, name: e.target.value })
+                  }
                   className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                   placeholder="e.g., Emergency Fund"
                   required
@@ -116,7 +128,9 @@ export function SavingsGoals() {
                   type="number"
                   step="0.01"
                   value={newGoal.targetAmount}
-                  onChange={(e) => setNewGoal({ ...newGoal, targetAmount: e.target.value })}
+                  onChange={(e) =>
+                    setNewGoal({ ...newGoal, targetAmount: e.target.value })
+                  }
                   className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                   placeholder="0.00"
                   required
@@ -131,7 +145,9 @@ export function SavingsGoals() {
                 </label>
                 <select
                   value={newGoal.category}
-                  onChange={(e) => setNewGoal({ ...newGoal, category: e.target.value })}
+                  onChange={(e) =>
+                    setNewGoal({ ...newGoal, category: e.target.value })
+                  }
                   className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                   required
                 >
@@ -151,7 +167,9 @@ export function SavingsGoals() {
                 <input
                   type="date"
                   value={newGoal.targetDate}
-                  onChange={(e) => setNewGoal({ ...newGoal, targetDate: e.target.value })}
+                  onChange={(e) =>
+                    setNewGoal({ ...newGoal, targetDate: e.target.value })
+                  }
                   className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                   required
                 />
@@ -172,9 +190,12 @@ export function SavingsGoals() {
       {savingsGoals.length === 0 ? (
         <div className="bg-white p-8 rounded-lg shadow-sm border border-slate-200 text-center">
           <div className="text-slate-400 text-4xl mb-4">🎯</div>
-          <h3 className="text-lg font-medium text-slate-900 mb-2">No savings goals yet</h3>
+          <h3 className="text-lg font-medium text-slate-900 mb-2">
+            No savings goals yet
+          </h3>
           <p className="text-slate-600 mb-4">
-            Create your first savings goal to start tracking your progress toward financial milestones.
+            Create your first savings goal to start tracking your progress
+            toward financial milestones.
           </p>
           <button
             onClick={() => setShowForm(true)}
@@ -198,8 +219,11 @@ export function SavingsGoals() {
   );
 }
 
-function SavingsGoalCard({ goal, onAddMoney }: { 
-  goal: any; 
+function SavingsGoalCard({
+  goal,
+  onAddMoney,
+}: {
+  goal: any;
   onAddMoney: (goalId: string, amount: string) => void;
 }) {
   const [addAmount, setAddAmount] = useState("");
@@ -212,7 +236,8 @@ function SavingsGoalCard({ goal, onAddMoney }: {
   };
 
   const daysLeft = Math.ceil(
-    (new Date(goal.targetDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+    (new Date(goal.targetDate).getTime() - new Date().getTime()) /
+      (1000 * 60 * 60 * 24),
   );
 
   return (
@@ -222,11 +247,15 @@ function SavingsGoalCard({ goal, onAddMoney }: {
           <h3 className="text-lg font-semibold text-slate-900">{goal.name}</h3>
           <p className="text-sm text-slate-600">{goal.category}</p>
         </div>
-        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-          daysLeft > 30 ? "bg-emerald-100 text-emerald-800" :
-          daysLeft > 0 ? "bg-yellow-100 text-yellow-800" :
-          "bg-red-100 text-red-800"
-        }`}>
+        <span
+          className={`px-2 py-1 rounded-full text-xs font-medium ${
+            daysLeft > 30
+              ? "bg-emerald-100 text-emerald-800"
+              : daysLeft > 0
+                ? "bg-yellow-100 text-yellow-800"
+                : "bg-red-100 text-red-800"
+          }`}
+        >
           {daysLeft > 0 ? `${daysLeft} days left` : "Overdue"}
         </span>
       </div>
@@ -245,8 +274,12 @@ function SavingsGoalCard({ goal, onAddMoney }: {
           />
         </div>
         <div className="flex justify-between items-center mt-2 text-sm">
-          <span className="text-emerald-600 font-medium">{goal.progress.toFixed(1)}% complete</span>
-          <span className="text-slate-500">${goal.remaining.toFixed(2)} remaining</span>
+          <span className="text-emerald-600 font-medium">
+            {goal.progress.toFixed(1)}% complete
+          </span>
+          <span className="text-slate-500">
+            ${goal.remaining.toFixed(2)} remaining
+          </span>
         </div>
       </div>
 

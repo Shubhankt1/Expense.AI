@@ -7,6 +7,7 @@ import { Id } from "../../convex/_generated/dataModel";
 import { DeleteButton } from "./DeleteButton";
 import { TransactionSort } from "./TransactionSort";
 import { SearchBar } from "./SearchBar";
+import { getErrorMessage } from "@/lib/errorUtils";
 
 interface Transaction {
   _id: string;
@@ -69,22 +70,17 @@ export function TransactionList({ transactions }: TransactionListProps) {
     )
       return;
     setDeletingId(transac._id);
-    toast.promise(
-      deleteTransaction({ id: transac._id as Id<"transactions"> }).finally(() =>
-        setDeletingId(null),
-      ),
-      {
-        success: `Deleted ${transac.description.substring(0, 10)}... of $${transac.amount.toFixed(2)}`,
-        error: (error) => {
-          const message = error?.message || "";
-          const match = message.match(/Uncaught Error: (.+?)(?:\n|at handler)/);
-          const cleanError = match
-            ? match[1].trim()
-            : "Failed to delete transaction";
-          return cleanError;
-        },
-      },
-    );
+
+    try {
+      await deleteTransaction({ id: transac._id as Id<"transactions"> });
+      toast.success(
+        `Deleted ${transac.description.substring(0, 10)}... of $${transac.amount.toFixed(2)}`,
+      );
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   if (transactions.length === 0) {

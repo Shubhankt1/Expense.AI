@@ -1,7 +1,8 @@
-import { v } from "convex/values";
+import { v, ConvexError } from "convex/values";
 import { query, mutation, internalMutation } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { api, internal } from "./_generated/api";
+import { ERROR_CODES } from "./errorCodes";
 
 export const setBudget = mutation({
   args: {
@@ -12,13 +13,16 @@ export const setBudget = mutation({
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) {
-      throw new Error("Not authenticated");
+      throw new ConvexError({
+        code: ERROR_CODES.UNAUTHENTICATED,
+        message: "You must be signed in to set a budget.",
+      });
     }
 
     const existingBudget = await ctx.db
       .query("budgets")
       .withIndex("by_user_and_month", (q) =>
-        q.eq("userId", userId).eq("month", args.month)
+        q.eq("userId", userId).eq("month", args.month),
       )
       .filter((q) => q.eq(q.field("category"), args.category))
       .first();
@@ -26,8 +30,12 @@ export const setBudget = mutation({
     const oldLimit = existingBudget?.monthlyLimit || 0;
     let resp;
 
-    if (!existingBudget && args.monthlyLimit == 0)
-      throw new Error("Cannot set a zero budget for a new category.");
+    if (!existingBudget && args.monthlyLimit == 0) {
+      throw new ConvexError({
+        code: "INVALID_INPUT",
+        message: "Cannot set a zero budget for a new category.",
+      });
+    }
 
     if (existingBudget) {
       if (args.monthlyLimit == 0) {
@@ -65,7 +73,7 @@ export const setBudget = mutation({
           userId: userId,
           category: args.category,
           month: args.month,
-        }
+        },
       );
       const newBudget = await ctx.db.insert("budgets", {
         userId,
@@ -93,10 +101,20 @@ export const deleteBudgetMutation = mutation({
   args: { budgetId: v.id("budgets") },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("UnAuthenticated!");
+    if (!userId) {
+      throw new ConvexError({
+        code: ERROR_CODES.UNAUTHENTICATED,
+        message: "You must be signed in to delete a budget.",
+      });
+    }
 
-    const budget = await ctx.db.get("budgets", args.budgetId);
-    if (budget?.userId !== userId) throw new Error("UnAuthorised!");
+    const budget = await ctx.db.get(args.budgetId);
+    if (!budget || budget.userId !== userId) {
+      throw new ConvexError({
+        code: ERROR_CODES.NOT_FOUND,
+        message: "Budget not found.",
+      });
+    }
 
     await ctx.runMutation(internal.budgets.deleteBudget, {
       budgetId: args.budgetId,
@@ -136,7 +154,7 @@ export const getBudgets = query({
     return await ctx.db
       .query("budgets")
       .withIndex("by_user_and_month", (q) =>
-        q.eq("userId", userId).eq("month", args.month)
+        q.eq("userId", userId).eq("month", args.month),
       )
       .collect();
   },
@@ -150,20 +168,23 @@ export const getBudgetStatus = query({
     // console.log("Getting budget status for month:", args.month);
     const userId = await getAuthUserId(ctx);
     if (!userId) {
-      throw new Error("UnAuthenticated!");
+      throw new ConvexError({
+        code: ERROR_CODES.UNAUTHENTICATED,
+        message: "You must be signed in to view budget status.",
+      });
     }
 
     const budgets = await ctx.db
       .query("budgets")
       .withIndex("by_user_and_month", (q) =>
-        q.eq("userId", userId).eq("month", args.month)
+        q.eq("userId", userId).eq("month", args.month),
       )
       .collect();
 
     // console.log({ budgets });
     const totalBudget = budgets.reduce(
       (sum, budget) => sum + budget.monthlyLimit,
-      0
+      0,
     );
     const totalSpent = budgets.reduce((sum, budget) => sum + budget.spent, 0);
 
@@ -199,7 +220,7 @@ export const updateBudgetForTransaction = internalMutation({
     const budget = await ctx.db
       .query("budgets")
       .withIndex("by_user_and_month", (q) =>
-        q.eq("userId", args.userId).eq("month", args.month)
+        q.eq("userId", args.userId).eq("month", args.month),
       )
       .filter((q) => q.eq(q.field("category"), args.category))
       .first();
@@ -226,7 +247,7 @@ export const updateBudgetForTransaction = internalMutation({
 
     console.log(
       `Budget updated: ${budget.category} ${args.month}: ` +
-        `$${budget.spent} -> $${newSpent}`
+        `$${budget.spent} -> $${newSpent}`,
     );
 
     return {

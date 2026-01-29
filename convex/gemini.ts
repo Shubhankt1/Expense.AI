@@ -1,6 +1,7 @@
-import { v } from "convex/values";
+import { v, ConvexError } from "convex/values";
 import { internalAction } from "./_generated/server";
 import { GoogleGenAI, ThinkingLevel } from "@google/genai";
+import { ERROR_CODES } from "./errorCodes";
 
 export const callGemini = internalAction({
   args: {
@@ -22,7 +23,11 @@ export const callGemini = internalAction({
       },
     });
 
-    if (!resp.text || resp.text === "") throw new Error("No Response.");
+    if (!resp.text || resp.text === "")
+      throw new ConvexError({
+        code: ERROR_CODES.AI_ERROR,
+        message: "No Response from AI.",
+      });
 
     const data = args.json ? JSON.parse(resp.text) : resp.text;
 

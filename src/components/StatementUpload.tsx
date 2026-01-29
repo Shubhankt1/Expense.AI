@@ -3,6 +3,7 @@ import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { toast } from "sonner";
 import { Id } from "../../convex/_generated/dataModel";
+import { getErrorMessage } from "@/lib/errorUtils";
 
 export function StatementUpload() {
   const [isUploading, setIsUploading] = useState(false);
@@ -13,13 +14,13 @@ export function StatementUpload() {
   const generateUploadUrl = useMutation(api.statements.generateUploadUrl);
   //   const processStatement = useAction(api.statements.processStatement);
   const processStatementMutation = useMutation(
-    api.statements.processStatementMutation
+    api.statements.processStatementMutation,
   );
   const processedStatements = useQuery(api.statements.getProcessedStatements);
 
   const jobStatus = useQuery(
     api.utils.getJobStatus,
-    jobId ? { jobId } : "skip"
+    jobId ? { jobId } : "skip",
   );
 
   // Monitor job completion and show success toast
@@ -42,7 +43,7 @@ export function StatementUpload() {
   }, [jobStatus, jobId]);
 
   const handleFileUpload = async (
-    event: React.ChangeEvent<HTMLInputElement>
+    event: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -105,7 +106,9 @@ export function StatementUpload() {
       }
     } catch (error) {
       console.error("Upload error:", error);
-      toast.error("Failed to process statement. Please try again.");
+      toast.error(getErrorMessage(error));
+      setIsUploading(false);
+      setIsProcessing(false);
     }
   };
 

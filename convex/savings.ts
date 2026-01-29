@@ -1,6 +1,7 @@
-import { v } from "convex/values";
+import { v, ConvexError } from "convex/values";
 import { query, mutation } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import { ERROR_CODES } from "./errorCodes";
 
 export const createSavingsGoal = mutation({
   args: {
@@ -12,7 +13,10 @@ export const createSavingsGoal = mutation({
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) {
-      throw new Error("Not authenticated");
+      throw new ConvexError({
+        code: ERROR_CODES.UNAUTHENTICATED,
+        message: "You must be signed in to create a savings goal.",
+      });
     }
 
     return await ctx.db.insert("savingsGoals", {
@@ -34,12 +38,18 @@ export const updateSavingsProgress = mutation({
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) {
-      throw new Error("Not authenticated");
+      throw new ConvexError({
+        code: ERROR_CODES.UNAUTHENTICATED,
+        message: "You must be signed in to update savings progress.",
+      });
     }
 
     const goal = await ctx.db.get(args.goalId);
     if (!goal || goal.userId !== userId) {
-      throw new Error("Goal not found or unauthorized");
+      throw new ConvexError({
+        code: ERROR_CODES.NOT_FOUND,
+        message: "Savings goal not found.",
+      });
     }
 
     await ctx.db.patch(args.goalId, {

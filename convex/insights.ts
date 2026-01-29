@@ -1,4 +1,4 @@
-import { v } from "convex/values";
+import { v, ConvexError } from "convex/values";
 import {
   query,
   action,
@@ -6,6 +6,7 @@ import {
   mutation,
   internalQuery,
 } from "./_generated/server";
+import { ERROR_CODES } from "./errorCodes";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { internal } from "./_generated/api";
 // import OpenAI from "openai";
@@ -37,7 +38,7 @@ export const getUserBudgets = internalQuery({
     return await ctx.db
       .query("budgets")
       .withIndex("by_user_and_month", (q) =>
-        q.eq("userId", args.userId).eq("month", currentMonth)
+        q.eq("userId", args.userId).eq("month", currentMonth),
       )
       .collect();
   },
@@ -72,9 +73,11 @@ export const generateInsights = action({
     // console.log({ transactions, budgets });
 
     if (transactions.length === 0) {
-      throw new Error(
-        "No Transactions Found for the user. Cannot generate insights at this moment."
-      );
+      throw new ConvexError({
+        code: ERROR_CODES.NO_DATA,
+        message:
+          "No Transactions Found for the user. Cannot generate insights at this moment.",
+      });
     }
 
     // Prepare data for AI analysis
@@ -142,7 +145,10 @@ export const generateInsights = action({
       //   const content = response.choices[0].message.content;
       const content = resp.text;
       if (!content || content === "")
-        throw new Error("Failed to analyse data. Try again later.");
+        throw new ConvexError({
+          code: ERROR_CODES.AI_ERROR,
+          message: "Failed to analyse data. Try again later.",
+        });
 
       const aiInsights = JSON.parse(content);
       console.log({ aiInsights });
@@ -190,7 +196,7 @@ export const getUserBudgetsPublic = query({
     return await ctx.db
       .query("budgets")
       .withIndex("by_user_and_month", (q) =>
-        q.eq("userId", args.userId).eq("month", currentMonth)
+        q.eq("userId", args.userId).eq("month", currentMonth),
       )
       .collect();
   },
@@ -205,16 +211,16 @@ export const createBatchInsights = internalMutation({
           v.literal("spending_pattern"),
           v.literal("budget_alert"),
           v.literal("savings_tip"),
-          v.literal("anomaly")
+          v.literal("anomaly"),
         ),
         title: v.string(),
         description: v.string(),
         priority: v.union(
           v.literal("low"),
           v.literal("medium"),
-          v.literal("high")
+          v.literal("high"),
         ),
-      })
+      }),
     ),
   },
   handler: async (ctx, args) => {
@@ -235,7 +241,7 @@ export const createInsight = internalMutation({
       v.literal("spending_pattern"),
       v.literal("budget_alert"),
       v.literal("savings_tip"),
-      v.literal("anomaly")
+      v.literal("anomaly"),
     ),
     title: v.string(),
     description: v.string(),
@@ -269,7 +275,10 @@ export const markAllAsRead = mutation({
   handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) {
-      throw new Error("Not authenticated");
+      throw new ConvexError({
+        code: "UNAUTHENTICATED",
+        message: "You must be signed in to mark insights as read.",
+      });
     }
 
     // 1. Fetch all unread insights for the current user
@@ -277,15 +286,15 @@ export const markAllAsRead = mutation({
       .query("insights")
       .withIndex("by_user", (q) => q.eq("userId", userId))
       .filter((q) =>
-        q.and(q.eq(q.field("userId"), userId), q.eq(q.field("isRead"), false))
+        q.and(q.eq(q.field("userId"), userId), q.eq(q.field("isRead"), false)),
       )
       .collect();
 
     if (unreadInsights.length === 0) {
-      const error: any = new Error("No unread insights found");
-      error.code = "NO_UNREAD_INSIGHTS";
-      error.description = "No unread insights found";
-      throw error;
+      throw new ConvexError({
+        code: ERROR_CODES.NO_UNREAD_INSIGHTS,
+        message: "No unread insights found",
+      });
     }
 
     // 2. Loop through and patch each document
@@ -306,12 +315,18 @@ export const markInsightAsRead = mutation({
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) {
-      throw new Error("Not authenticated");
+      throw new ConvexError({
+        code: ERROR_CODES.UNAUTHENTICATED,
+        message: "You must be signed in to mark insights as read.",
+      });
     }
 
     const insight = await ctx.db.get(args.insightId);
     if (!insight || insight.userId !== userId) {
-      throw new Error("Insight not found or unauthorized");
+      throw new ConvexError({
+        code: ERROR_CODES.NOT_FOUND,
+        message: "Insight not found or unauthorized",
+      });
     }
 
     await ctx.db.patch(args.insightId, {
@@ -325,7 +340,10 @@ export const deleteAllInsights = mutation({
   handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) {
-      throw new Error("Not authenticated");
+      throw new ConvexError({
+        code: ERROR_CODES.UNAUTHENTICATED,
+        message: "You must be signed in to delete insights.",
+      });
     }
 
     let success = false;
@@ -336,7 +354,7 @@ export const deleteAllInsights = mutation({
         .query("insights")
         .withIndex("by_user", (q) => q.eq("userId", userId))
         .filter((q) =>
-          q.and(q.eq(q.field("userId"), userId), q.eq(q.field("isRead"), true))
+          q.and(q.eq(q.field("userId"), userId), q.eq(q.field("isRead"), true)),
         )
         .collect(),
       ctx.db

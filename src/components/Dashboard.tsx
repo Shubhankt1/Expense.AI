@@ -14,7 +14,7 @@ import { MonthSlider } from "./MonthSlider";
 import { getCurrentMonth, isoToMonthString } from "@/lib/dateUtils";
 
 export function Dashboard() {
-  const { dateRange, getMonthString } = useDateFilter();
+  const { dateRange } = useDateFilter();
   //   console.log({ dateRange });
   //   console.log(getMonthString());
 

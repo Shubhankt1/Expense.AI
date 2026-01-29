@@ -11,6 +11,7 @@ import {
   getTodayISO,
   isoToMonthString,
 } from "@/lib/dateUtils";
+import { getErrorMessage } from "@/lib/errorUtils";
 
 interface Budget {
   id: Id<"budgets">;
@@ -55,25 +56,22 @@ export function BudgetManager() {
   const handleDelete = async (budget: Budget) => {
     if (
       !confirm(
-        `Delete Budget for category "${budget.category}" for the month of ${budget.month}?`
+        `Delete Budget for category "${budget.category}" for the month of ${budget.month}?`,
       )
     )
       return;
     setDeletingId(budget.id);
-    toast.promise(
-      deleteBudget({ budgetId: budget.id }).finally(() => setDeletingId(null)),
-      {
-        success: `Deleted budget category "${budget.category}" for the month of ${budget.month}`,
-        error: (error) => {
-          const message = error?.message || "";
-          const match = message.match(/Uncaught Error: (.+?)(?:\n|at handler)/);
-          const cleanError = match
-            ? match[1].trim()
-            : "Failed to delete budget";
-          return cleanError;
-        },
-      }
-    );
+
+    try {
+      await deleteBudget({ budgetId: budget.id });
+      toast.success(
+        `Deleted budget category "${budget.category}" for the month of ${budget.month}`,
+      );
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -95,8 +93,8 @@ export function BudgetManager() {
       else toast.success("Budget updated successfully");
       setNewBudget({ category: "", monthlyLimit: "" });
     } catch (error) {
-      toast.error("Failed to update budget");
-      throw error;
+      toast.error(getErrorMessage(error));
+      console.error("Failed to update budget:", error);
     }
   };
 

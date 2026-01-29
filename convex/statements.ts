@@ -1,4 +1,4 @@
-import { v } from "convex/values";
+import { v, ConvexError } from "convex/values";
 import {
   action,
   mutation,
@@ -9,12 +9,16 @@ import {
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { internal } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
+import { ERROR_CODES } from "./errorCodes";
 
 export const generateUploadUrl = mutation({
   handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) {
-      throw new Error("Not authenticated");
+      throw new ConvexError({
+        code: ERROR_CODES.UNAUTHENTICATED,
+        message: "You must be signed in to upload statements.",
+      });
     }
     return await ctx.storage.generateUploadUrl();
   },
@@ -28,7 +32,10 @@ export const processStatementMutation = mutation({
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) {
-      throw new Error("Not authenticated");
+      throw new ConvexError({
+        code: ERROR_CODES.UNAUTHENTICATED,
+        message: "You must be signed in to process statements.",
+      });
     }
 
     const jobId: Id<"_scheduled_functions"> = await ctx.scheduler.runAfter(
@@ -55,7 +62,10 @@ export const processStatement = internalAction({
     // Get the file from storage
     const file = await ctx.storage.get(args.storageId);
     if (!file) {
-      throw new Error("File not found");
+      throw new ConvexError({
+        code: ERROR_CODES.NOT_FOUND,
+        message: "File not found",
+      });
     }
 
     // Convert file to text (assuming it's a text-based format like CSV or plain text)
@@ -130,7 +140,10 @@ export const processStatement = internalAction({
       });
 
       if (!parsedData.transactions || !Array.isArray(parsedData.transactions)) {
-        throw new Error("Invalid response format from AI");
+        throw new ConvexError({
+          code: ERROR_CODES.AI_ERROR,
+          message: "Invalid response format from AI",
+        });
       }
 
       //   console.log({ parsedData });

@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useAction } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { toast } from "sonner";
+import { getErrorMessage } from "@/lib/errorUtils";
 
 export function InsightsPanel() {
   const insights = useQuery(api.insights.getInsights);
@@ -16,16 +17,7 @@ export function InsightsPanel() {
     toast.promise(generateInsights({ userId: loggedInUser._id }), {
       loading: "Analyzing your financial data...",
       success: "New insights generated!",
-      error: (err) => {
-        const message = err?.message || "";
-
-        if (message.includes("No Transactions Found")) {
-          return "No Transactions Found.";
-        }
-
-        // Return cleaned message or fallback
-        return message || "Failed to generate insights";
-      },
+      error: (err) => getErrorMessage(err),
     });
   };
 
@@ -33,7 +25,7 @@ export function InsightsPanel() {
     toast.promise(markAsRead({ insightId: insightId as any }), {
       loading: "Marking as read...",
       success: "Marked as read!",
-      error: "Failed to mark insight as read",
+      error: (err) => getErrorMessage(err),
     });
   };
 
@@ -41,12 +33,7 @@ export function InsightsPanel() {
     toast.promise(markAllAsRead(), {
       loading: "Marking all as read...",
       success: (result) => `Marked ${result.count} insights as read!`,
-      error: (err) => {
-        return err?.message?.includes("No unread insights")
-          ? err?.message?.split("Error:")[1].split("at")[0] ||
-              "Failed to mark all as read."
-          : err?.message || "Failed to mark all as read 2.";
-      },
+      error: (err) => getErrorMessage(err),
     });
   };
 
@@ -54,7 +41,7 @@ export function InsightsPanel() {
     // Optional: Confirm before delete
     if (
       !confirm(
-        `Are you sure you want to delete all insights? This cannot be undone.`
+        `Are you sure you want to delete all insights? This cannot be undone.`,
       )
     )
       return;
@@ -62,7 +49,7 @@ export function InsightsPanel() {
     toast.promise(deleteAllInsights(), {
       loading: "Deleting insights...",
       success: (res) => res.message,
-      error: (err) => err?.message || "Failed to delete insights",
+      error: (err) => getErrorMessage(err),
     });
     // const result = await deleteAllInsights();
 

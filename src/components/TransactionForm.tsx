@@ -3,6 +3,7 @@ import { useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { toast } from "sonner";
 import { dateInputToISO } from "@/lib/dateUtils";
+import { getErrorMessage } from "@/lib/errorUtils";
 
 export function TransactionForm() {
   const [isOpen, setIsOpen] = useState(false);
@@ -55,8 +56,8 @@ export function TransactionForm() {
       });
       setIsOpen(false);
     } catch (error) {
-      toast.error("Failed to add transaction");
-      throw error;
+      toast.error(getErrorMessage(error));
+      console.error("Failed to add transaction:", error);
     }
   };
 
