@@ -116,7 +116,7 @@ export function MonthSlider() {
           </svg>
         </button>
 
-        <span className="text-sm font-medium text-slate-900 min-w-[140px] text-center">
+        <span className="text-sm font-medium text-slate-900 min-w-[100px] text-center">
           {dateToMonthLocaleString(availableMonths[currentMonthIndex])}
         </span>
 
@@ -146,7 +146,7 @@ export function MonthSlider() {
       {!isCurrentMonth && (
         <button
           onClick={handleToday}
-          className="px-5 py-2 text-sm font-medium text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-3xl hover:bg-emerald-100 transition-colors"
+          className="px-5 py-2 text-xs md:text-sm font-medium text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-3xl hover:bg-emerald-100 transition-colors"
         >
           Jump to Today
         </button>

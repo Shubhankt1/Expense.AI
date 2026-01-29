@@ -26,10 +26,10 @@ export function Dashboard() {
     endDate: dateRange.endDate,
   });
   const spendingByCategory = useQuery(api.transactions.getSpendingByCategory, {
-    month: getMonthString(),
+    month: isoToMonthString(dateRange.startDate || getCurrentMonth()),
     // month: "2025-11",
   });
-  const monthlyTrends = useQuery(api.transactions.getMonthlyTrends, {
+  const _monthlyTrends = useQuery(api.transactions.getMonthlyTrends, {
     months: 6,
   });
   const budgetStatus = useQuery(api.budgets.getBudgetStatus, {

@@ -30,13 +30,13 @@ export function TransactionList({ transactions }: TransactionListProps) {
 
   const filteredAndSortedTransactions = useMemo(() => {
     if (!transactions) return [];
-    
+
     // Filter by search query
     let filtered = transactions;
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       filtered = transactions.filter((t) =>
-        t.description.toLowerCase().includes(query)
+        t.description.toLowerCase().includes(query),
       );
     }
 
@@ -100,17 +100,19 @@ export function TransactionList({ transactions }: TransactionListProps) {
       <div className="space-y-4">
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-slate-900">Transactions</h3>
+            <h3 className="text-lg font-semibold text-slate-900">
+              Transactions
+            </h3>
             <TransactionSort currentSort={sortBy} onSortChange={setSortBy} />
           </div>
-          
+
           <SearchBar
             value={searchQuery}
             onChange={setSearchQuery}
             placeholder="Search transactions..."
           />
         </div>
-        
+
         <div className="text-center py-8 text-slate-500">
           <p>No transactions found matching "{searchQuery}"</p>
         </div>
@@ -125,14 +127,14 @@ export function TransactionList({ transactions }: TransactionListProps) {
           <h3 className="text-lg font-semibold text-slate-900">Transactions</h3>
           <TransactionSort currentSort={sortBy} onSortChange={setSortBy} />
         </div>
-        
+
         <SearchBar
           value={searchQuery}
           onChange={setSearchQuery}
-          placeholder="Search transactions..."
+          placeholder={`Search ${filteredAndSortedTransactions.length} transactions...`}
         />
       </div>
-      
+
       <div className="space-y-3">
         {filteredAndSortedTransactions.map((transaction) => (
           <div
