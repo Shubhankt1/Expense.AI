@@ -41,10 +41,10 @@ export function DateFilterTabs() {
       <div className="md:hidden relative">
         <button
           onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-          className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-3xl text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+          className="flex items-center gap-2 px-6 py-2 bg-white border border-slate-200 rounded-3xl text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
         >
           <svg
-            className="h-4 w-4"
+            className="h-4 w-4 mr-2"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -69,7 +69,7 @@ export function DateFilterTabs() {
             />
 
             {/* Menu */}
-            <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-lg shadow-lg z-20 overflow-hidden">
+            <div className="absolute left-0 right-0 mt-2 bg-white border border-slate-200 rounded-lg shadow-lg z-20 overflow-hidden mx-auto max-w-[12rem]">
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
