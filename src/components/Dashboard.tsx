@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { BudgetManager } from "./BudgetManager";
 import { SavingsGoals } from "./SavingsGoals";
 import { InsightsPanel } from "./InsightsPanel";
@@ -13,14 +13,26 @@ import { DashboardTransactions } from "./DashboardTransactions";
 /**
  * Navigation tab definitions
  */
-const NAVIGATION_TABS = [
+const NAVIGATION_TABS = Object.freeze([
   new NavigationTab("overview", "Overview", "📊"),
   new NavigationTab("transactions", "Transactions", "💳"),
   new NavigationTab("upload", "Upload Statement", "📄"),
   new NavigationTab("budgets", "Budgets", "🎯"),
   new NavigationTab("savings", "Savings", "💰"),
   new NavigationTab("insights", "Insights", "🧠"),
-];
+]);
+
+/**
+ * Tab configuration mapping tab IDs to components
+ */
+const TAB_CONFIG: Record<string, React.FC> = {
+  overview: DashboardOverview,
+  transactions: DashboardTransactions,
+  upload: StatementUpload,
+  budgets: BudgetManager,
+  savings: SavingsGoals,
+  insights: InsightsPanel,
+};
 
 /**
  * Dashboard - Lightweight router managing navigation and tab content
@@ -31,20 +43,7 @@ export function Dashboard() {
 
   const [activeTab, setActiveTab] = useState("overview");
 
-  // Memoize tab config to prevent unnecessary re-renders
-  const tabConfig: Record<string, React.FC> = useMemo(
-    () => ({
-      overview: DashboardOverview,
-      transactions: DashboardTransactions,
-      upload: StatementUpload,
-      budgets: BudgetManager,
-      savings: SavingsGoals,
-      insights: InsightsPanel,
-    }),
-    [],
-  );
-
-  const ActiveComponent = tabConfig[activeTab] || DashboardOverview;
+  const ActiveComponent = TAB_CONFIG[activeTab] || DashboardOverview;
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-8">

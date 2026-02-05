@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { memo } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { SpendingChart } from "./SpendingChart";
@@ -7,9 +7,9 @@ import { useDateFilter } from "@/hooks/useDateFilter";
 import { getCurrentMonth, isoToMonthString } from "@/lib/dateUtils";
 
 /**
- * StatCard component - extracted to reduce duplication
+ * StatCard component - memoized to prevent unnecessary re-renders
  */
-function StatCard({
+const StatCard = memo(function StatCard({
   title,
   value,
   subtitle,
@@ -25,7 +25,7 @@ function StatCard({
       <p className="text-sm text-slate-500">{subtitle}</p>
     </div>
   );
-}
+});
 
 /**
  * DashboardOverview - Encapsulates overview tab with its own queries
@@ -34,10 +34,7 @@ function StatCard({
 export function DashboardOverview() {
   const { dateRange } = useDateFilter();
 
-  const month = useMemo(
-    () => isoToMonthString(dateRange.startDate || getCurrentMonth()),
-    [dateRange.startDate],
-  );
+  const month = isoToMonthString(dateRange.startDate || getCurrentMonth());
 
   // Queries scoped to overview tab
   const transactions = useQuery(api.transactions.getTransactions, {
